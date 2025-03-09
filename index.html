@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v3</h2>
+    <h2>Парсер боёв v4</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -66,7 +66,7 @@
     
     <script>
         function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
-            let matches = [...html.matchAll(/href=\"warlog\.php\?warid=(\d+)\".*?>(.*?)<\/a>.*?vs.*?<i>(.*?)<\/i>/g)];
+            let matches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)".*?<b><a.*?>(.*?)<\/a>.*?vs.*?<i>(.*?)<\/i>/g)];
             console.log("Matches found:", matches);
             let battles = [];
             
