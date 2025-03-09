@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v7</h2>
+    <h2>Парсер боёв v4</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -66,22 +66,17 @@
     
     <script>
         function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
-            let matches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)\".*?>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:.*?(<b>)?<a.*?>(.*?)<\/a>(<\/b>)?.*?vs.*?<i>(.*?)<\/i>/g)];
-
-
-
+            let matches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)".*?<b><a.*?>(.*?)<\/a>.*?vs.*?<i>(.*?)<\/i>/g)];
             console.log("Matches found:", matches);
             let battles = [];
             
             for (let match of matches) {
                 let warId = match[1];
-                let dateTime = match[2];
-                let left = match[3].replace(/<.*?>/g, '').trim();
-                let right = match[4].replace(/<.*?>/g, '').trim();
-                let isWin = match[3] !== undefined && match[5] !== undefined;
+                let left = match[2].replace(/<.*?>/g, '').trim();
+                let right = match[3].replace(/<.*?>/g, '').trim();
+                let isWin = left.includes('<b>');
                 let battleLink = `https://www.heroeswm.ru/warlog.php?warid=${warId}` + (watchFromStart ? "&lt" : "");
-                let battleInfo = `${dateTime} ${left} vs ${right} ${isWin ? '[win]' : '[lose]'} ${battleLink}`;
-
+                let battleInfo = `${left} vs ${right} ${isWin ? '[win]' : '[lose]'} ${battleLink}`;
                 
                 battles.push({ battleInfo, isWin });
             }
