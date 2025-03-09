@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v10</h2>
+    <h2>Парсер боёв v11</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -89,7 +89,7 @@
                 
                 battles.push({ battleInfo, isWin });
             }
-            
+            battles.sort((a, b) => a.battleInfo.localeCompare(b.battleInfo));
             if (doFilter) {
                 battles = battles.filter(battle => filters.some(f => battle.battleInfo.includes(f)));
             }
