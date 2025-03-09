@@ -90,6 +90,7 @@
                 battles.push({ battleInfo, isWin });
             }
             battles.sort((a, b) => a.battleInfo.localeCompare(b.battleInfo));
+            
             if (doFilter) {
                 battles = battles.filter(battle => filters.some(f => battle.battleInfo.includes(f)));
             }
