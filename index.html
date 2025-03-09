@@ -66,7 +66,8 @@
     
     <script>
         function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
-            let matches = html.matchAll(/href=\"warlog\.php\?warid=(\d+)\".*?>(.*?)<\/a>.*?vs.*?<\/td><td.*?>(.*?)<\/td>/g);
+            let matches = [...html.matchAll(/href=\"warlog\.php\?warid=(\d+)\".*?>(.*?)<\/a>.*?vs.*?<\/td><td.*?>(.*?)<\/td>/g)];
+            console.log("Matches found:", matches);
             let battles = [];
             
             for (let match of matches) {
