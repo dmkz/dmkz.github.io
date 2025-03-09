@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v8</h2>
+    <h2>Парсер боёв v9</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -84,7 +84,7 @@
                 let left = match[3].replace(/<.*?>/g, '').trim();
                 let right = match[4].replace(/<.*?>/g, '').trim();
                 let battleLink = `https://www.heroeswm.ru/warlog.php?warid=${warId}` + (watchFromStart ? "&lt" : "");
-                let battleInfo = `(${match[5]}) ${dateTime} ${left} vs ${right} ${isWin ? '[win]' : '[lose]'} ${battleLink}`;
+                let battleInfo = `${dateTime} ${left} vs ${right} ${isWin ? '[win]' : '[lose]'} ${battleLink}`;
                 
                 battles.push({ battleInfo, isWin });
             }
