@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Обработка текста</title>
+    <title>Парсер боёв</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 600px;
+            max-width: 800px;
             margin: auto;
             padding: 20px;
             text-align: center;
@@ -21,38 +21,85 @@
             text-align: left;
             margin-bottom: 10px;
         }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .half {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
-    <h2>Введите текст для обработки</h2>
-    <textarea id="userText" placeholder="Введите текст..."></textarea>
-    
-    <div class="options">
-        <label><input type="checkbox" id="toUpper"> Преобразовать в верхний регистр</label><br>
-        <label><input type="checkbox" id="toLower"> Преобразовать в нижний регистр</label><br>
-        <label><input type="checkbox" id="reverseText"> Развернуть текст</label>
+    <h2>Парсер боёв</h2>
+    <div class="container">
+        <div class="half">
+            <h3>Входные данные (HTML)</h3>
+            <textarea id="battleInput" placeholder="Введите HTML страницы с боями..."></textarea>
+        </div>
+        <div class="half">
+            <h3>Фильтр боёв</h3>
+            <textarea id="filterInput">Праздничные злодеи
+Стражи серебра
+Враждебный отряд
+Лесные грабители
+Пираты
+Враги племени Ярости
+Вражеский караван
+Вражеские стражи
+Хранители артефактов
+Враги портала
+Цель</textarea>
+        </div>
     </div>
     
-    <button onclick="processText()">Обработать</button>
+    <div class="options">
+        <label><input type="checkbox" id="doFilter" checked> Выбрать бои с ивента</label><br>
+        <label><input type="checkbox" id="onlyWins"> Показывать только победы</label><br>
+        <label><input type="checkbox" id="watchFromStart" checked> Указывать на начало боя</label>
+    </div>
+    
+    <button onclick="processBattles()">Обработать</button>
     
     <h3>Результат:</h3>
-    <p id="result"></p>
+    <pre id="result"></pre>
     
     <script>
-        function processText() {
-            let text = document.getElementById("userText").value;
+        function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
+            let matches = html.matchAll(/href=\"warlog\.php\?warid=(\d+)\".*?>(.*?)<\/a>.*?vs.*?<\/td><td.*?>(.*?)<\/td>/g);
+            let battles = [];
             
-            if (document.getElementById("toUpper").checked) {
-                text = text.toUpperCase();
-            }
-            if (document.getElementById("toLower").checked) {
-                text = text.toLowerCase();
-            }
-            if (document.getElementById("reverseText").checked) {
-                text = text.split('').reverse().join('');
+            for (let match of matches) {
+                let warId = match[1];
+                let left = match[2].replace(/<.*?>/g, '').trim();
+                let right = match[3].replace(/<.*?>/g, '').trim();
+                let isWin = left.includes('<b>');
+                let battleLink = `https://www.heroeswm.ru/warlog.php?warid=${warId}` + (watchFromStart ? "&lt" : "");
+                let battleInfo = `${left} vs ${right} ${isWin ? '[win]' : '[lose]'} ${battleLink}`;
+                
+                battles.push({ battleInfo, isWin });
             }
             
-            document.getElementById("result").innerText = text;
+            if (doFilter) {
+                battles = battles.filter(battle => filters.some(f => battle.battleInfo.includes(f)));
+            }
+            
+            if (onlyWins) {
+                battles = battles.filter(battle => battle.isWin);
+            }
+            
+            return battles.map(battle => battle.battleInfo).join('\n');
+        }
+        
+        function processBattles() {
+            let html = document.getElementById("battleInput").value;
+            let filters = document.getElementById("filterInput").value.split('\n').map(f => f.trim()).filter(f => f);
+            let doFilter = document.getElementById("doFilter").checked;
+            let onlyWins = document.getElementById("onlyWins").checked;
+            let watchFromStart = document.getElementById("watchFromStart").checked;
+            
+            let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart);
+            document.getElementById("result").textContent = result || "Ничего не найдено";
         }
     </script>
 </body>
