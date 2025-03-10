@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v30</h2>
+    <h2>Парсер боёв v31</h2>
     <button id="toggleInputButton" onclick="toggleInput()">Свернуть</button>
     <div id="inputContainer">
         <div class="container">
@@ -113,8 +113,9 @@
             let doFilter = document.getElementById("doFilter").checked;
             let onlyWins = document.getElementById("onlyWins").checked;
             let watchFromStart = document.getElementById("watchFromStart").checked;
+            let useLordswm = document.getElementById("useLordswm").checked;
     
-            let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart);
+            let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useLordswm);
             document.getElementById("result").textContent = result || "Ничего не найдено";
     
             // После обработки сворачиваем форму
