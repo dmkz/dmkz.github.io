@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v23</h2>
+    <h2>Парсер боёв v24</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -117,11 +117,13 @@
     let removeMostCommon = document.getElementById('removeMostCommon').checked;
 
     battles = battles.map(battle => {
-        let opponent = battle.left === mostCommonName ? battle.right : battle.left; // Оппонент
-        let battleInfo = `${battle.dateTime} ${opponent} ${battle.isWin ? '[win]' : '[lose]'} ${battle.battleLink}`.trim();
+        let battleInfo;
 
         if (removeMostCommon && mostCommonName) {
+            let opponent = battle.left === mostCommonName ? battle.right : battle.left; // Оппонент
             battleInfo = `${battle.dateTime} ${opponent} ${battle.isWin ? '[win]' : '[lose]'} ${battle.battleLink}`.trim();
+        } else {
+            battleInfo = `${battle.dateTime} ${battle.left} vs ${battle.right} ${battle.isWin ? '[win]' : '[lose]'} ${battle.battleLink}`.trim();
         }
 
         if (removeDate) {
@@ -144,6 +146,7 @@ function processBattles() {
     let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart);
     document.getElementById("result").textContent = result || "Ничего не найдено";
 }
+
 
 
 
