@@ -98,14 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>
-    Парсер боёв v38 
-    <select id="languageSelect" onchange="changeLanguage()">
-        <option value="ru">Русский</option>
-        <option value="en">English</option>
-    </select>
-</h2>
-
+    <h2>Парсер боёв v37</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -153,56 +146,6 @@
     <button id="copyButton" onclick="copyResult()">Скопировать результат</button>
     
     <script>
-// Объект с переводами
-const translations = {
-    ru: {
-        title: "Парсер боёв v37",
-        inputLabel: "Входные данные (HTML)",
-        filterLabel: "Фильтр боёв",
-        processButton: "Обработать",
-        clearButton: "Очистить",
-        resultTitle: "Результат:",
-        copyButton: "Скопировать результат",
-        toggleShow: "Развернуть настройки",
-        toggleHide: "Скрыть настройки",
-    },
-    en: {
-        title: "Battle Parser v37",
-        inputLabel: "Input Data (HTML)",
-        filterLabel: "Battle Filter",
-        processButton: "Process",
-        clearButton: "Clear",
-        resultTitle: "Result:",
-        copyButton: "Copy Result",
-        toggleShow: "Show Settings",
-        toggleHide: "Hide Settings",
-    }
-};
-
-// Функция смены языка
-function changeLanguage() {
-    const lang = document.getElementById("languageSelect").value;
-    localStorage.setItem("selectedLanguage", lang); // Запоминаем язык
-
-    document.querySelector("h2").childNodes[0].textContent = translations[lang].title + " ";
-    document.querySelector(".half h3").textContent = translations[lang].inputLabel;
-    document.querySelectorAll(".half h3")[1].textContent = translations[lang].filterLabel;
-    document.querySelector("button[onclick='processBattles()']").textContent = translations[lang].processButton;
-    document.querySelector(".clear-btn").textContent = translations[lang].clearButton;
-    document.getElementById("resultTitle").textContent = translations[lang].resultTitle;
-    document.getElementById("copyButton").textContent = translations[lang].copyButton;
-    document.getElementById("toggleButton").textContent = document.getElementById("inputContainer").style.display === "none" 
-        ? translations[lang].toggleShow 
-        : translations[lang].toggleHide;
-}
-
-// Загружаем сохранённый язык
-document.addEventListener("DOMContentLoaded", () => {
-    const savedLang = localStorage.getItem("selectedLanguage") || "ru";
-    document.getElementById("languageSelect").value = savedLang;
-    changeLanguage();
-});
-
 function clearInput() {
     document.getElementById("battleInput").value = "";
 }
