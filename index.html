@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v11</h2>
+    <h2>Парсер боёв v12</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -57,6 +57,7 @@
         <label><input type="checkbox" id="doFilter" checked> Выбрать бои с ивента</label><br>
         <label><input type="checkbox" id="onlyWins"> Показывать только победы</label><br>
         <label><input type="checkbox" id="watchFromStart" checked> Указывать на начало боя</label>
+        <label><input type="checkbox" id="removeDate"> Удалить дату и время после сортировки</label><br>
     </div>
     
     <button onclick="processBattles()">Обработать</button>
@@ -99,6 +100,12 @@
                 battles = battles.filter(battle => battle.isWin);
             }
             
+            if (document.getElementById('removeDate').checked) {
+                battles = battles.map(battle => ({
+                    ...battle,
+                    battleInfo: battle.battleInfo.replace(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2} /, '')
+                }));
+            }
             return battles.map(battle => battle.battleInfo).join('\n');
         }
         
