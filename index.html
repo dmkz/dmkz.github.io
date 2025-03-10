@@ -7,9 +7,15 @@
     <style>
         .input-group {
             display: flex;
-            flex-direction: column; /* Элементы располагаются вертикально */
-            align-items: flex-start; /* Выравнивание слева */
-            gap: 5px; /* Небольшой отступ между полем и кнопкой */
+            flex-direction: column;
+            align-items: center; /* Центрирование кнопки */
+            gap: 5px;
+            width: 100%; /* Чтобы кнопка была по ширине поля */
+        }
+
+        .clear-btn {
+            width: 50%; /* Опционально: можно изменить ширину кнопки */
+            text-align: center; /* Убедимся, что текст в кнопке тоже по центру */
         }
         
         button {
@@ -92,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v36</h2>
+    <h2>Парсер боёв v37</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
