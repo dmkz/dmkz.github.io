@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Парсер боёв</title>
     <style>
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Отступ между полем и кнопкой */
+        }
+
+        .clear-btn {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .clear-btn:hover {
+            background-color: #cc0000;
+        }
         @media (max-width: 600px) {
             .container {
                 flex-direction: column; /* Разместить блоки один под другим */
@@ -42,14 +61,17 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v33</h2>
+    <h2>Парсер боёв v34</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
-<textarea id="battleInput" placeholder="Вставьте HTML страницы с боями... 
+<div class="input-group">
+    <textarea id="battleInput" placeholder="Вставьте HTML страницы с боями... 
 Можно вставить сразу несколько страниц. 
 Проще всего: откройте протокол боёв, нажмите CTRL+U, затем CTRL+A, CTRL+C и вставьте сюда (CTRL+V)."></textarea>
+    <button class="clear-btn" onclick="clearInput()">Очистить</button>
+</div>
 
         </div>
         <div class="half">
@@ -77,7 +99,6 @@
         <label><input type="checkbox" id="useLordswm"> Использовать my.lordswm.com вместо www.heroeswm.ru</label>
     </div>
     
-    <button onclick="clearInput()">Очистить входные данные</button>
     <button onclick="processBattles()">Обработать</button>
 </div>
 
