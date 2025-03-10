@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v16</h2>
+    <h2>Парсер боёв v32</h2>
     <button id="toggleInputButton" onclick="toggleInput()">Свернуть</button>
     <div id="inputContainer">
         <div class="container">
@@ -74,67 +74,122 @@
     <button id="copyButton" onclick="copyResult()">Скопировать результат</button>
     
     <script>
-        function toggleInput() {
-            let inputContainer = document.getElementById("inputContainer");
-            let toggleButton = document.getElementById("toggleInputButton");
-            
-            if (inputContainer.style.display === "none") {
-                inputContainer.style.display = "block";
-                toggleButton.textContent = "Свернуть";
+    function toggleInput() {
+        let inputContainer = document.getElementById("inputContainer");
+        let toggleButton = document.getElementById("toggleInputButton");
+
+        if (inputContainer.style.display === "none") {
+            inputContainer.style.display = "block";
+            toggleButton.textContent = "Свернуть";
+        } else {
+            inputContainer.style.display = "none";
+            toggleButton.textContent = "Развернуть";
+        }
+    }
+
+    function copyResult() {
+        let resultText = document.getElementById("result").textContent.trim();
+        let mostCommonName = document.getElementById("resultTitle").textContent.trim();
+        let removeMostCommon = document.getElementById('removeMostCommon').checked;
+
+        if (!resultText) {
+            alert("Результат пуст, нечего копировать!");
+            return;
+        }
+
+        let textToCopy = removeMostCommon ? `${mostCommonName}\n${resultText}` : resultText;
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            alert("Результат скопирован в буфер обмена!");
+        }).catch(err => {
+            console.error("Ошибка при копировании: ", err);
+            alert("Ошибка при копировании!");
+        });
+    }
+
+    function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useLordswm) {
+        let matches = [...html.matchAll(/href="warlog\\.php\\?warid=(\\d+)".*?>(\\d{2}-\\d{2}-\\d{2} \\d{2}:\\d{2})<\\/a>:.*?<b><a.*?>(.*?)<\\/a>.*?vs.*?<i>(.*?)<\\/i>/g)];
+        let matches2 = [...html.matchAll(/href="warlog\\.php\\?warid=(\\d+)".*?>(\\d{2}-\\d{2}-\\d{2} \\d{2}:\\d{2})<\\/a>:.*?<a.*?>(.*?)<\\/a>.*?vs.*?<i>(.*?)<\\/i>/g)];
+
+        let matchIds = new Set(matches.map(m => m[1]));
+        let combinedMatches = matches.map(m => [...m, 'matches', true])
+            .concat(matches2.map(m => [...m, 'matches2', matchIds.has(m[1])]))
+            .filter((m, index, self) => index === self.findIndex(t => t[1] === m[1]));
+
+        let battles = [];
+        let nameCounts = {};
+
+        for (let match of combinedMatches) {
+            let warId = match[1];
+            let [day, month, year, time] = match[2].split(/[- ]/);
+            let dateTime = `${year}-${month}-${day} ${time}`;
+            let isWin = match[6];
+            let left = match[3].replace(/<.*?>/g, '').trim();
+            let right = match[4].replace(/<.*?>/g, '').trim();
+
+            nameCounts[left] = (nameCounts[left] || 0) + 1;
+            nameCounts[right] = (nameCounts[right] || 0) + 1;
+
+            let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
+            let battleLink = `https://${baseDomain}/warlog.php?warid=${warId}` + (watchFromStart ? "&lt" : "");
+            let battleInfo = `${dateTime} ${left} vs ${right} ${isWin ? '[win]' : '[lose]'} ${battleLink}`;
+
+            battles.push({ battleInfo, isWin, left, right, warId, dateTime, battleLink });
+        }
+
+        battles.sort((a, b) => a.battleInfo.localeCompare(b.battleInfo));
+
+        if (doFilter) {
+            battles = battles.filter(battle => filters.some(f => battle.battleInfo.includes(f)));
+        }
+
+        if (onlyWins) {
+            battles = battles.filter(battle => battle.isWin);
+        }
+
+        let mostCommonName = Object.keys(nameCounts).reduce((a, b) => nameCounts[a] > nameCounts[b] ? a : b, '');
+
+        let resultTitle = document.getElementById("resultTitle");
+        resultTitle.textContent = mostCommonName || "Результат:";
+
+        let removeDate = document.getElementById('removeDate').checked;
+        let removeMostCommon = document.getElementById('removeMostCommon').checked;
+
+        battles = battles.map(battle => {
+            let battleInfo;
+
+            if (removeMostCommon && mostCommonName) {
+                let opponent = battle.left === mostCommonName ? battle.right : battle.left;
+                battleInfo = `${battle.dateTime} ${opponent} ${battle.isWin ? '[win]' : '[lose]'} ${battle.battleLink}`.trim();
             } else {
-                inputContainer.style.display = "none";
-                toggleButton.textContent = "Развернуть";
+                battleInfo = `${battle.dateTime} ${battle.left} vs ${battle.right} ${battle.isWin ? '[win]' : '[lose]'} ${battle.battleLink}`.trim();
             }
-        }
 
-        function copyResult() {
-            let resultText = document.getElementById("result").textContent.trim();
-            let mostCommonName = document.getElementById("resultTitle").textContent.trim();
-            let removeMostCommon = document.getElementById('removeMostCommon').checked;
-    
-            if (!resultText) {
-                alert("Результат пуст, нечего копировать!");
-                return;
+            if (removeDate) {
+                battleInfo = battleInfo.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, '').trim();
             }
-    
-            let textToCopy = removeMostCommon ? `${mostCommonName}\n${resultText}` : resultText;
-    
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                alert("Результат скопирован в буфер обмена!");
-            }).catch(err => {
-                console.error("Ошибка при копировании: ", err);
-                alert("Ошибка при копировании!");
-            });
-        }
 
-        function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useLordswm) {
-            let matches = [...html.matchAll(/href="warlog\\.php\\?warid=(\\d+)".*?>(\\d{2}-\\d{2}-\\d{2} \\d{2}:\\d{2})<\/a>:.*?<b><a.*?>(.*?)<\/a>.*?vs.*?<i>(.*?)<\/i>/g)];
-            let battles = matches.map(match => {
-                let warId = match[1];
-                let dateTime = match[2];
-                let left = match[3].trim();
-                let right = match[4].trim();
-                let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
-                let battleLink = `https://${baseDomain}/warlog.php?warid=${warId}`;
-                return `${dateTime} ${left} vs ${right} ${battleLink}`;
-            });
-            return battles.join('\n');
-        }
+            return { ...battle, battleInfo };
+        });
 
-        function processBattles() {
-            let html = document.getElementById("battleInput").value;
-            let filters = document.getElementById("filterInput").value.split('\n').map(f => f.trim()).filter(f => f);
-            let doFilter = document.getElementById("doFilter").checked;
-            let onlyWins = document.getElementById("onlyWins").checked;
-            let watchFromStart = document.getElementById("watchFromStart").checked;
-            let useLordswm = document.getElementById("useLordswm").checked;
-    
-            let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useLordswm);
-            document.getElementById("result").textContent = result || "Ничего не найдено";
-    
-            document.getElementById("inputContainer").style.display = "none";
-            document.getElementById("toggleInputButton").textContent = "Развернуть";
-        }
-    </script>
+        return battles.map(battle => battle.battleInfo).join('\n');
+    }
+
+    function processBattles() {
+        let html = document.getElementById("battleInput").value;
+        let filters = document.getElementById("filterInput").value.split('\\n').map(f => f.trim()).filter(f => f);
+        let doFilter = document.getElementById("doFilter").checked;
+        let onlyWins = document.getElementById("onlyWins").checked;
+        let watchFromStart = document.getElementById("watchFromStart").checked;
+        let useLordswm = document.getElementById("useLordswm").checked;
+
+        let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useLordswm);
+        document.getElementById("result").textContent = result || "Ничего не найдено";
+
+        document.getElementById("inputContainer").style.display = "none";
+        document.getElementById("toggleInputButton").textContent = "Развернуть";
+    }
+</script>
+
 </body>
 </html>
