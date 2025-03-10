@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v21</h2>
+    <h2>Парсер боёв v22</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -68,90 +68,83 @@
     
     <script>
         function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
-            let matches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)".*?>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:.*?<b><a.*?>(.*?)<\/a>.*?vs.*?<i>(.*?)<\/i>/g)];
-            let matches2 = [...html.matchAll(/href="warlog\.php\?warid=(\d+)".*?>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:.*?<a.*?>(.*?)<\/a>.*?vs.*?<i>(.*?)<\/i>/g)];
-            
-            let matchIds = new Set(matches.map(m => m[1]));
-            let combinedMatches = matches.map(m => [...m, 'matches', true])
-                .concat(matches2.map(m => [...m, 'matches2', matchIds.has(m[1])]))
-                .filter((m, index, self) => index === self.findIndex(t => t[1] === m[1]));
+    let matches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)".*?>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:.*?<b><a.*?>(.*?)<\/a>.*?vs.*?<i>(.*?)<\/i>/g)];
+    let matches2 = [...html.matchAll(/href="warlog\.php\?warid=(\d+)".*?>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:.*?<a.*?>(.*?)<\/a>.*?vs.*?<i>(.*?)<\/i>/g)];
+    
+    let matchIds = new Set(matches.map(m => m[1]));
+    let combinedMatches = matches.map(m => [...m, 'matches', true])
+        .concat(matches2.map(m => [...m, 'matches2', matchIds.has(m[1])]))
+        .filter((m, index, self) => index === self.findIndex(t => t[1] === m[1]));
 
-            console.log("Matches found:", combinedMatches);
-            let battles = [];
-            let nameCounts = {};
+    let battles = [];
+    let nameCounts = {};
 
-            for (let match of combinedMatches) {
-                let warId = match[1];
-                let [day, month, year, time] = match[2].split(/[- ]/);
-                let dateTime = `${year}-${month}-${day} ${time}`;
-                let isWin = match[6];
-                let left = match[3].replace(/<.*?>/g, '').trim();
-                let right = match[4].replace(/<.*?>/g, '').trim();
-                
-                // Подсчет встречаемости имен
-                nameCounts[left] = (nameCounts[left] || 0) + 1;
-                nameCounts[right] = (nameCounts[right] || 0) + 1;
+    for (let match of combinedMatches) {
+        let warId = match[1];
+        let [day, month, year, time] = match[2].split(/[- ]/);
+        let dateTime = `${year}-${month}-${day} ${time}`;
+        let isWin = match[6];
+        let left = match[3].replace(/<.*?>/g, '').trim();
+        let right = match[4].replace(/<.*?>/g, '').trim();
+        
+        // Подсчет встречаемости имен
+        nameCounts[left] = (nameCounts[left] || 0) + 1;
+        nameCounts[right] = (nameCounts[right] || 0) + 1;
 
-                let battleLink = `https://www.heroeswm.ru/warlog.php?warid=${warId}` + (watchFromStart ? "&lt" : "");
-                let battleInfo = `${dateTime} ${left} vs ${right} ${isWin ? '[win]' : '[lose]'} ${battleLink}`;
-                
-                battles.push({ battleInfo, isWin, left, right });
-            }
+        let battleLink = `https://www.heroeswm.ru/warlog.php?warid=${warId}` + (watchFromStart ? "&lt" : "");
+        let battleInfo = `${dateTime} ${left} vs ${right} ${isWin ? '[win]' : '[lose]'} ${battleLink}`;
+        
+        battles.push({ battleInfo, isWin, left, right, warId, dateTime, battleLink });
+    }
 
-            battles.sort((a, b) => a.battleInfo.localeCompare(b.battleInfo));
+    battles.sort((a, b) => a.battleInfo.localeCompare(b.battleInfo));
 
-            if (doFilter) {
-                battles = battles.filter(battle => filters.some(f => battle.battleInfo.includes(f)));
-            }
+    if (doFilter) {
+        battles = battles.filter(battle => filters.some(f => battle.battleInfo.includes(f)));
+    }
 
-            if (onlyWins) {
-                battles = battles.filter(battle => battle.isWin);
-            }
+    if (onlyWins) {
+        battles = battles.filter(battle => battle.isWin);
+    }
 
-            if (document.getElementById('removeDate').checked) {
-                battles = battles.map(battle => ({
-                    ...battle,
-                    battleInfo: battle.battleInfo.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, '').trim()
-                }));
-            }
+    if (document.getElementById('removeDate').checked) {
+        battles = battles.map(battle => ({
+            ...battle,
+            battleInfo: battle.battleInfo.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, '').trim()
+        }));
+    }
 
-            let mostCommonName = Object.keys(nameCounts).reduce((a, b) => nameCounts[a] > nameCounts[b] ? a : b, '');
+    let mostCommonName = Object.keys(nameCounts).reduce((a, b) => nameCounts[a] > nameCounts[b] ? a : b, '');
 
-            // Обновление заголовка "Результат:" на самое частое имя
-            let resultTitle = document.getElementById("resultTitle");
-            resultTitle.textContent = mostCommonName || "Результат:";
+    // Обновление заголовка "Результат:" на самое частое имя
+    let resultTitle = document.getElementById("resultTitle");
+    resultTitle.textContent = mostCommonName || "Результат:";
 
-            // Если установлен чекбокс "Удалить никнейм", удаляем mostCommonName и "vs"
-            if (document.getElementById('removeMostCommon').checked && mostCommonName) {
-                battles = battles.map(battle => {
-                    let updatedInfo = battle.battleInfo;
+    // Если установлен чекбокс "Удалить никнейм", удаляем mostCommonName и "vs"
+    if (document.getElementById('removeMostCommon').checked && mostCommonName) {
+        battles = battles.map(battle => {
+            let opponent = battle.left === mostCommonName ? battle.right : battle.left; // Оппонент
+            return {
+                ...battle,
+                battleInfo: `${battle.dateTime} ${opponent} ${battle.isWin ? '[win]' : '[lose]'} ${battle.battleLink}`.trim()
+            };
+        });
+    }
 
-                    if (battle.left === mostCommonName) {
-                        updatedInfo = updatedInfo.replace(new RegExp(`\\b${mostCommonName}\\b vs `, 'g'), '');
-                    } else if (battle.right === mostCommonName) {
-                        updatedInfo = updatedInfo.replace(new RegExp(` vs \\b${mostCommonName}\\b`, 'g'), '');
-                    }
+    return battles.map(battle => battle.battleInfo).join('\n');
+}
 
-                    return {
-                        ...battle,
-                        battleInfo: updatedInfo.trim()
-                    };
-                });
-            }
+function processBattles() {
+    let html = document.getElementById("battleInput").value;
+    let filters = document.getElementById("filterInput").value.split('\n').map(f => f.trim()).filter(f => f);
+    let doFilter = document.getElementById("doFilter").checked;
+    let onlyWins = document.getElementById("onlyWins").checked;
+    let watchFromStart = document.getElementById("watchFromStart").checked;
 
-            return battles.map(battle => battle.battleInfo).join('\n');
-        }
+    let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart);
+    document.getElementById("result").textContent = result || "Ничего не найдено";
+}
 
-        function processBattles() {
-            let html = document.getElementById("battleInput").value;
-            let filters = document.getElementById("filterInput").value.split('\n').map(f => f.trim()).filter(f => f);
-            let doFilter = document.getElementById("doFilter").checked;
-            let onlyWins = document.getElementById("onlyWins").checked;
-            let watchFromStart = document.getElementById("watchFromStart").checked;
-
-            let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart);
-            document.getElementById("result").textContent = result || "Ничего не найдено";
-        }
 
 
     </script>
