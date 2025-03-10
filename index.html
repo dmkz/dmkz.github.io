@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v20</h2>
+    <h2>Парсер боёв v21</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -95,7 +95,7 @@
                 let battleLink = `https://www.heroeswm.ru/warlog.php?warid=${warId}` + (watchFromStart ? "&lt" : "");
                 let battleInfo = `${dateTime} ${left} vs ${right} ${isWin ? '[win]' : '[lose]'} ${battleLink}`;
                 
-                battles.push({ battleInfo, isWin });
+                battles.push({ battleInfo, isWin, left, right });
             }
 
             battles.sort((a, b) => a.battleInfo.localeCompare(b.battleInfo));
@@ -123,11 +123,20 @@
 
             // Если установлен чекбокс "Удалить никнейм", удаляем mostCommonName и "vs"
             if (document.getElementById('removeMostCommon').checked && mostCommonName) {
-                let regex = new RegExp(`\\b${mostCommonName}\\b\\s*vs\\s*|\\s*vs\\s*\\b${mostCommonName}\\b`, 'g');
-                battles = battles.map(battle => ({
-                    ...battle,
-                    battleInfo: battle.battleInfo.replace(regex, '').trim()
-                }));
+                battles = battles.map(battle => {
+                    let updatedInfo = battle.battleInfo;
+
+                    if (battle.left === mostCommonName) {
+                        updatedInfo = updatedInfo.replace(new RegExp(`\\b${mostCommonName}\\b vs `, 'g'), '');
+                    } else if (battle.right === mostCommonName) {
+                        updatedInfo = updatedInfo.replace(new RegExp(` vs \\b${mostCommonName}\\b`, 'g'), '');
+                    }
+
+                    return {
+                        ...battle,
+                        battleInfo: updatedInfo.trim()
+                    };
+                });
             }
 
             return battles.map(battle => battle.battleInfo).join('\n');
@@ -143,6 +152,7 @@
             let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart);
             document.getElementById("result").textContent = result || "Ничего не найдено";
         }
+
 
     </script>
 </body>
