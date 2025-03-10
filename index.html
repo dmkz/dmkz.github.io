@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v33</h2>
+    <h2>Парсер боёв v16</h2>
     <button id="toggleInputButton" onclick="toggleInput()">Свернуть</button>
     <div id="inputContainer">
         <div class="container">
@@ -108,7 +108,9 @@
         }
 
         function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useLordswm) {
-            let matches = [...html.matchAll(/href="warlog\\.php\\?warid=(\\d+)".*?>(\\d{2}-\\d{2}-\\d{2} \\d{2}:\\d{2})<\/a>:.*?<b><a.*?>(.*?)<\/a>.*?vs.*?<i>(.*?)<\/i>/g)];
+            let matches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)".*?>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:.*?<b><a.*?>(.*?)<\/a>.*?vs.*?<i>(.*?)<\/i>/g)];
+            if (matches.length === 0) return "Ничего не найдено";
+            
             let battles = matches.map(match => {
                 let warId = match[1];
                 let dateTime = match[2];
@@ -130,7 +132,7 @@
             let useLordswm = document.getElementById("useLordswm").checked;
     
             let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useLordswm);
-            document.getElementById("result").textContent = result || "Ничего не найдено";
+            document.getElementById("result").textContent = result;
     
             document.getElementById("inputContainer").style.display = "none";
             document.getElementById("toggleInputButton").textContent = "Развернуть";
