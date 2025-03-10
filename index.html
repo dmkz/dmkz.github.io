@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v14</h2>
+    <h2>Парсер боёв v15</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -57,7 +57,8 @@
         <label><input type="checkbox" id="doFilter" checked> Выбрать бои с ивента</label><br>
         <label><input type="checkbox" id="onlyWins"> Показывать только победы</label><br>
         <label><input type="checkbox" id="watchFromStart" checked> Указывать на начало боя</label><br>
-        <label><input type="checkbox" id="removeDate"> Удалить дату и время после сортировки</label>
+        <label><input type="checkbox" id="removeDate"> Удалить дату и время после сортировки</label><br>
+        <label><input type="checkbox" id="removeMostCommon"> Удалить никнейм</label>
     </div>
     
     <button onclick="processBattles()">Обработать</button>
@@ -106,13 +107,13 @@
                     battleInfo: battle.battleInfo.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, '')
                 }));
             }
-            let mostCommonName = Object.keys(nameCounts).reduce((a, b) => nameCounts[a] > nameCounts[b] ? a : b, '');
-            if (document.getElementById('removeMostCommon').checked) {
-                battles = battles.map(battle => ({
-                    ...battle,
-                    battleInfo: battle.battleInfo.replace(new RegExp(`\\b${mostCommonName}\\b`, 'g'), '').trim()
-                }));
-            }
+            //let mostCommonName = Object.keys(nameCounts).reduce((a, b) => nameCounts[a] > nameCounts[b] ? a : b, '');
+            //if (document.getElementById('removeMostCommon').checked) {
+            //    battles = battles.map(battle => ({
+            //        ...battle,
+            //        battleInfo: battle.battleInfo.replace(new RegExp(`\\b${mostCommonName}\\b`, 'g'), '').trim()
+            //    }));
+            //}
             return battles.map(battle => battle.battleInfo).join('\n');
         }
         
