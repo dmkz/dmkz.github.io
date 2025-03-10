@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v29</h2>
+    <h2>Парсер боёв v30</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -189,7 +189,7 @@ function toggleInput() {
     let inputContainer = document.getElementById("inputContainer");
     let toggleButton = document.getElementById("toggleButton");
 
-    if (inputContainer.style.display === "none") {
+    if (toggleButton.textContent === "Развернуть настройки") {
         inputContainer.style.display = "block";
         toggleButton.textContent = "Скрыть настройки";
     } else {
