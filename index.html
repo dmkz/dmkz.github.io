@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v22</h2>
+    <h2>Парсер боёв v23</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -107,29 +107,29 @@
         battles = battles.filter(battle => battle.isWin);
     }
 
-    if (document.getElementById('removeDate').checked) {
-        battles = battles.map(battle => ({
-            ...battle,
-            battleInfo: battle.battleInfo.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, '').trim()
-        }));
-    }
-
     let mostCommonName = Object.keys(nameCounts).reduce((a, b) => nameCounts[a] > nameCounts[b] ? a : b, '');
 
     // Обновление заголовка "Результат:" на самое частое имя
     let resultTitle = document.getElementById("resultTitle");
     resultTitle.textContent = mostCommonName || "Результат:";
 
-    // Если установлен чекбокс "Удалить никнейм", удаляем mostCommonName и "vs"
-    if (document.getElementById('removeMostCommon').checked && mostCommonName) {
-        battles = battles.map(battle => {
-            let opponent = battle.left === mostCommonName ? battle.right : battle.left; // Оппонент
-            return {
-                ...battle,
-                battleInfo: `${battle.dateTime} ${opponent} ${battle.isWin ? '[win]' : '[lose]'} ${battle.battleLink}`.trim()
-            };
-        });
-    }
+    let removeDate = document.getElementById('removeDate').checked;
+    let removeMostCommon = document.getElementById('removeMostCommon').checked;
+
+    battles = battles.map(battle => {
+        let opponent = battle.left === mostCommonName ? battle.right : battle.left; // Оппонент
+        let battleInfo = `${battle.dateTime} ${opponent} ${battle.isWin ? '[win]' : '[lose]'} ${battle.battleLink}`.trim();
+
+        if (removeMostCommon && mostCommonName) {
+            battleInfo = `${battle.dateTime} ${opponent} ${battle.isWin ? '[win]' : '[lose]'} ${battle.battleLink}`.trim();
+        }
+
+        if (removeDate) {
+            battleInfo = battleInfo.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, '').trim();
+        }
+
+        return { ...battle, battleInfo };
+    });
 
     return battles.map(battle => battle.battleInfo).join('\n');
 }
@@ -144,6 +144,7 @@ function processBattles() {
     let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart);
     document.getElementById("result").textContent = result || "Ничего не найдено";
 }
+
 
 
 
