@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v26</h2>
+    <h2>Парсер боёв v27</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -58,7 +58,8 @@
         <label><input type="checkbox" id="onlyWins"> Показывать только победы</label><br>
         <label><input type="checkbox" id="watchFromStart" checked> Указывать на начало боя</label><br>
         <label><input type="checkbox" id="removeDate"> Удалить дату и время после сортировки</label><br>
-        <label><input type="checkbox" id="removeMostCommon"> Удалить никнейм</label>
+        <label><input type="checkbox" id="removeMostCommon"> Удалить никнейм</label><br>
+        <label><input type="checkbox" id="useLordswm"> Использовать my.lordswm.com вместо www.heroeswm.ru</label>
     </div>
     
     <button onclick="processBattles()">Обработать</button>
@@ -101,6 +102,7 @@
 
     let battles = [];
     let nameCounts = {};
+    let useLordswm = document.getElementById('useLordswm').checked; // Проверяем чекбокс
 
     for (let match of combinedMatches) {
         let warId = match[1];
@@ -114,7 +116,9 @@
         nameCounts[left] = (nameCounts[left] || 0) + 1;
         nameCounts[right] = (nameCounts[right] || 0) + 1;
 
-        let battleLink = `https://www.heroeswm.ru/warlog.php?warid=${warId}` + (watchFromStart ? "&lt" : "");
+        // Формируем ссылку, заменяя домен при необходимости
+        let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
+        let battleLink = `https://${baseDomain}/warlog.php?warid=${warId}` + (watchFromStart ? "&lt" : "");
         let battleInfo = `${dateTime} ${left} vs ${right} ${isWin ? '[win]' : '[lose]'} ${battleLink}`;
         
         battles.push({ battleInfo, isWin, left, right, warId, dateTime, battleLink });
