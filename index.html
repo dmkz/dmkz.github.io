@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v38</h2>
+    <h2>Парсер боёв v37</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -113,10 +113,17 @@
         </div>
         <div class="half">
             <h3>Фильтр боёв</h3>
-            <div id="filterContainer"></div>
-            <input type="text" id="newFilterInput" placeholder="Введите название фильтра">
-            <button onclick="addFilter()">Добавить фильтр</button>
-            <button onclick="clearFilters()" class="clear-btn">Очистить фильтры</button>
+            <textarea id="filterInput">Праздничные злодеи
+Стражи серебра
+Враждебный отряд
+Лесные грабители
+Пираты
+Враги племени Ярости
+Вражеский караван
+Вражеские стражи
+Хранители артефактов
+Враги портала
+Цель</textarea>
         </div>
     </div>
     
@@ -139,74 +146,6 @@
     <button id="copyButton" onclick="copyResult()">Скопировать результат</button>
     
     <script>
-// Фильтры по умолчанию
-const defaultFilters = [
-    "Праздничные злодеи",
-    "Стражи серебра",
-    "Враждебный отряд",
-    "Лесные грабители",
-    "Пираты",
-    "Враги племени Ярости",
-    "Вражеский караван",
-    "Вражеские стражи",
-    "Хранители артефактов",
-    "Враги портала",
-    "Цель"
-];
-
-// Функция загрузки фильтров из localStorage
-function loadFilters() {
-    let storedFilters = JSON.parse(localStorage.getItem("battleFilters"));
-    if (!storedFilters) {
-        storedFilters = defaultFilters;
-        localStorage.setItem("battleFilters", JSON.stringify(storedFilters));
-    }
-
-    const container = document.getElementById("filterContainer");
-    container.innerHTML = ""; // Очищаем контейнер перед добавлением новых чекбоксов
-
-    storedFilters.forEach(filter => {
-        const label = document.createElement("label");
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.value = filter;
-        checkbox.checked = true; // По умолчанию включены
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(filter));
-        container.appendChild(label);
-        container.appendChild(document.createElement("br"));
-    });
-}
-
-// Функция добавления нового фильтра
-function addFilter() {
-    const newFilter = document.getElementById("newFilterInput").value.trim();
-    if (newFilter === "") return;
-
-    let storedFilters = JSON.parse(localStorage.getItem("battleFilters")) || [];
-    if (!storedFilters.includes(newFilter)) {
-        storedFilters.push(newFilter);
-        localStorage.setItem("battleFilters", JSON.stringify(storedFilters));
-        loadFilters();
-    }
-
-    document.getElementById("newFilterInput").value = ""; // Очищаем поле ввода
-}
-
-// Функция очистки фильтров (сброс к стандартным)
-function clearFilters() {
-    localStorage.removeItem("battleFilters");
-    loadFilters();
-}
-
-// Функция получения включенных фильтров
-function getActiveFilters() {
-    const checkboxes = document.querySelectorAll("#filterContainer input[type='checkbox']:checked");
-    return Array.from(checkboxes).map(cb => cb.value);
-}
-
-// Загружаем фильтры при загрузке страницы
-document.addEventListener("DOMContentLoaded", loadFilters);
 function clearInput() {
     document.getElementById("battleInput").value = "";
 }
