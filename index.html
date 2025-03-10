@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v19</h2>
+    <h2>Парсер боёв v20</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -120,6 +120,15 @@
             // Обновление заголовка "Результат:" на самое частое имя
             let resultTitle = document.getElementById("resultTitle");
             resultTitle.textContent = mostCommonName || "Результат:";
+
+            // Если установлен чекбокс "Удалить никнейм", удаляем mostCommonName и "vs"
+            if (document.getElementById('removeMostCommon').checked && mostCommonName) {
+                let regex = new RegExp(`\\b${mostCommonName}\\b\\s*vs\\s*|\\s*vs\\s*\\b${mostCommonName}\\b`, 'g');
+                battles = battles.map(battle => ({
+                    ...battle,
+                    battleInfo: battle.battleInfo.replace(regex, '').trim()
+                }));
+            }
 
             return battles.map(battle => battle.battleInfo).join('\n');
         }
