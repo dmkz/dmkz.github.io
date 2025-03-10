@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v30</h2>
+    <h2>Парсер боёв v31</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -197,6 +197,28 @@ function toggleInput() {
         toggleButton.textContent = "Развернуть настройки";
     }
 }
+function saveOptions() {
+    let checkboxes = document.querySelectorAll(".options input[type='checkbox']");
+    checkboxes.forEach(checkbox => {
+        localStorage.setItem(checkbox.id, checkbox.checked);
+    });
+}
+function loadOptions() {
+    let checkboxes = document.querySelectorAll(".options input[type='checkbox']");
+    checkboxes.forEach(checkbox => {
+        let storedValue = localStorage.getItem(checkbox.id);
+        if (storedValue !== null) {
+            checkbox.checked = storedValue === "true";
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadOptions(); // Загружаем сохранённые настройки при загрузке страницы
+    document.querySelectorAll(".options input[type='checkbox']").forEach(checkbox => {
+        checkbox.addEventListener("change", saveOptions); // Сохраняем при изменении
+    });
+});
 
     </script>
 </body>
