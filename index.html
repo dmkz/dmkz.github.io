@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v17</h2>
+    <h2>Парсер боёв v18</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -116,7 +116,7 @@
             }
 
             let mostCommonName = Object.keys(nameCounts).reduce((a, b) => nameCounts[a] > nameCounts[b] ? a : b, '');
-            
+            console.log("mostCommonName:", mostCommonName);
             // Обновление заголовка с самым частым именем
             document.querySelector("h3").textContent = mostCommonName || "Результат";
 
