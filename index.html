@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v31</h2>
+    <h2>Парсер боёв v32</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -182,7 +182,9 @@ function processBattles() {
     
     // Скрываем входные данные и настройки
     document.getElementById("inputContainer").style.display = "none";
-    document.getElementById("toggleButton").style.display = "block"; // Показываем кнопку "Развернуть"
+    document.getElementById("toggleButton").style.display = "block";
+    document.getElementById("toggleButton").textContent = "Развернуть настройки";
+    // Показываем кнопку "Развернуть"
 }
 
 function toggleInput() {
