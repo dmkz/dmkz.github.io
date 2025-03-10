@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v24</h2>
+    <h2>Парсер боёв v25</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -65,8 +65,25 @@
     
     <h3 id="resultTitle">Результат:</h3>
     <pre id="result"></pre>
+    <button id="copyButton" onclick="copyResult()">Скопировать результат</button>
     
     <script>
+        function copyResult() {
+            let resultText = document.getElementById("result").textContent;
+            
+            if (!resultText.trim()) {
+                alert("Результат пуст, нечего копировать!");
+                return;
+            }
+
+            navigator.clipboard.writeText(resultText).then(() => {
+                alert("Результат скопирован в буфер обмена!");
+            }).catch(err => {
+                console.error("Ошибка при копировании: ", err);
+                alert("Ошибка при копировании!");
+            });
+        }
+    
         function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     let matches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)".*?>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:.*?<b><a.*?>(.*?)<\/a>.*?vs.*?<i>(.*?)<\/i>/g)];
     let matches2 = [...html.matchAll(/href="warlog\.php\?warid=(\d+)".*?>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:.*?<a.*?>(.*?)<\/a>.*?vs.*?<i>(.*?)<\/i>/g)];
