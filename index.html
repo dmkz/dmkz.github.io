@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Парсер боёв</title>
     <style>
+        @media (max-width: 600px) {
+            .container {
+                flex-direction: column; /* Разместить блоки один под другим */
+            }
+            .half {
+                width: 100%; /* Растянуть блоки на всю ширину */
+            }
+            textarea {
+                height: 150px; /* Сделать текстовые поля выше для удобства */
+            }
+        }
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
@@ -31,7 +42,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v32</h2>
+    <h2>Парсер боёв v33</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -66,6 +77,7 @@
         <label><input type="checkbox" id="useLordswm"> Использовать my.lordswm.com вместо www.heroeswm.ru</label>
     </div>
     
+    <button onclick="clearInput()">Очистить входные данные</button>
     <button onclick="processBattles()">Обработать</button>
 </div>
 
@@ -76,7 +88,10 @@
     <button id="copyButton" onclick="copyResult()">Скопировать результат</button>
     
     <script>
-        function copyResult() {
+function clearInput() {
+    document.getElementById("battleInput").value = "";
+}
+function copyResult() {
     let resultText = document.getElementById("result").textContent.trim();
     let mostCommonName = document.getElementById("resultTitle").textContent.trim();
     let removeMostCommon = document.getElementById('removeMostCommon').checked;
