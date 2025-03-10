@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v18</h2>
+    <h2>Парсер боёв v19</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -63,7 +63,7 @@
     
     <button onclick="processBattles()">Обработать</button>
     
-    <h3>Результат:</h3>
+    <h3 id="resultTitle">Результат:</h3>
     <pre id="result"></pre>
     
     <script>
@@ -116,9 +116,10 @@
             }
 
             let mostCommonName = Object.keys(nameCounts).reduce((a, b) => nameCounts[a] > nameCounts[b] ? a : b, '');
-            console.log("mostCommonName:", mostCommonName);
-            // Обновление заголовка с самым частым именем
-            document.querySelector("h3").textContent = mostCommonName || "Результат";
+
+            // Обновление заголовка "Результат:" на самое частое имя
+            let resultTitle = document.getElementById("resultTitle");
+            resultTitle.textContent = mostCommonName || "Результат:";
 
             return battles.map(battle => battle.battleInfo).join('\n');
         }
