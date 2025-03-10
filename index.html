@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v15</h2>
+    <h2>Парсер боёв v16</h2>
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
@@ -104,9 +104,10 @@
             if (document.getElementById('removeDate').checked) {
                 battles = battles.map(battle => ({
                     ...battle,
-                    battleInfo: battle.battleInfo.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, '')
+                    battleInfo: battle.battleInfo.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, '').trim()
                 }));
             }
+
             //let mostCommonName = Object.keys(nameCounts).reduce((a, b) => nameCounts[a] > nameCounts[b] ? a : b, '');
             //if (document.getElementById('removeMostCommon').checked) {
             //    battles = battles.map(battle => ({
