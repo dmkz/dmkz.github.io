@@ -7,8 +7,39 @@
     <style>
         .input-group {
             display: flex;
-            align-items: center;
-            gap: 10px; /* Отступ между полем и кнопкой */
+            flex-direction: column; /* Элементы располагаются вертикально */
+            align-items: flex-start; /* Выравнивание слева */
+            gap: 5px; /* Небольшой отступ между полем и кнопкой */
+        }
+        
+        button {
+            background-color: #007bff; /* Синий цвет кнопок */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3; /* Темно-синий при наведении */
+        }
+
+        button:active {
+            transform: scale(0.95); /* Эффект нажатия */
+        }
+
+
+        /* Скрытая кнопка "Развернуть настройки" */
+        #toggleButton {
+            display: none;
+            background-color: #6c757d; /* Серый */
+        }
+
+        #toggleButton:hover {
+            background-color: #5a6268;
         }
 
         .clear-btn {
@@ -61,7 +92,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v34</h2>
+    <h2>Парсер боёв v36</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
