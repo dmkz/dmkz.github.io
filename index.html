@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-013: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-014: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -247,11 +247,11 @@ function cleanSpecialSymbols(html) {
 }
 
 function extractPlayerNames(text) {
-    let cleanedText = text.replace(/<[^>]+>/g, '').trim(); // Убираем HTML-теги
+    let cleanedText = text.replace(/<[^>]+>/g, '').trim(); // Удаляем все HTML-теги
     let names = [];
 
-    // Улучшенный regex: ищем ники с пробелами, тире, апострофами и (возможно) уровнем в квадратных скобках
-    let playerRegex = /([A-Za-zА-Яа-яЁё0-9\s\-\']+)(?:\[(\d+)\])?/g;
+    // Улучшенный regex: ищем ники с пробелами, тире, апострофами, подчёркиваниями и (возможно) уровнем в []
+    let playerRegex = /([A-Za-zА-Яа-яЁё0-9\s\-\_']+)(?:\[(\d+)\])?/g;
     let match;
 
     while ((match = playerRegex.exec(cleanedText)) !== null) {
@@ -272,7 +272,6 @@ function decodeHTMLEntities(text) {
     let doc = new DOMParser().parseFromString(text, "text/html");
     return doc.documentElement.textContent;
 }
-
 
   
 /*function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
