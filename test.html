@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-003</h2>
+    <h2>Парсер боёв v40-004</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -232,8 +232,9 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         if (watchFromStart) battleLink += "&lt";
 
         let playerBaseName = playerName.replace(/\[\d+(-\d+)?\]/, "").trim();
+        console.log("playerBaseName", playerBaseName);
         let playerSideIndex = sidesParsed.findIndex(side =>
-            side.some(name => name.replace(/\[\d+(-\d+)?\]/, "").trim() === playerBaseName)
+            side.some(name => name.includes(playerBaseName))
         );
 
         // ✅ Определяем победу или поражение игрока
@@ -242,10 +243,24 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             playerResult = "[win]";
         }
 
+        // ✅ Если удаляем сторону, оставляем только статус и вторую сторону
+        if (removeMostCommon && playerSideIndex !== -1) {
+            battleResult = `${formattedDateTime} ${playerResult} ${sidesParsed.map(players => players.join(", ")).join(" vs ")} ${battleLink}`;
+        } else {
+            battleResult = `${formattedDateTime} ${sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ")} ${battleLink}`;
+        }
+
         // ✅ Удаляем всю сторону, содержащую игрока, если чекбокс removeMostCommon включен
         if (removeMostCommon && playerSideIndex !== -1) {
-            sidesParsed.splice(playerSideIndex, 1);
-            sidesStatus.splice(playerSideIndex, 1);
+            let sideBefore = sidesParsed.length;
+            sidesParsed = sidesParsed.filter(side => !side.some(name => name.includes(playerBaseName)));
+            let sideAfter = sidesParsed.length;
+
+            if (sideBefore === sideAfter) {
+                console.warn(`❌ Не удалось удалить сторону с игроком: ${playerBaseName}`);
+            } else {
+                console.log(`✅ Удалена сторона игрока: ${playerBaseName}`);
+            }
         }
 
         // ✅ Если чекбокс включен, убираем [win]/[lose] у остальных игроков
@@ -283,7 +298,8 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     } else {
         battles = battles.map(battle => battle.battleResult);
     }
-    
+    battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim()); // Убираем висячие запятые
+    battles = battles.filter(battle => battle.trim().length > 0); // Убираем пустые строки
     return battles.join("\n");
 }
 
