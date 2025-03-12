@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-023</h2>
+    <h2>Парсер боёв v40-024</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -232,7 +232,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     console.log("mostCommonPlayer", mostCommonPlayer);
     
     if (removeMostCommon && mostCommonPlayer) {
-        console.log("Удаляем ник и его сторону:", mostCommonPlayer); // Отладка
+        console.log("Обрабатываем ник:", mostCommonPlayer); // Отладка
 
         let escapedPlayer = mostCommonPlayer.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 
@@ -257,13 +257,13 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
                 let linkMatch = side.match(/https?:\/\/\S+/);
                 if (linkMatch) battleLink = linkMatch[0];
 
-                // Определяем, победила ли сторона игрока
+                // Проверяем, находится ли игрок в этой стороне
                 if (new RegExp(`\\b${escapedPlayer}(\\s*\\[\\d+\\])?\\b`, "gi").test(sideWithoutLink)) {
+                    // Определяем, победила эта сторона или нет
                     playerResult = side.includes("[win]") ? "[win]" : "[lose]";
+                    newParts.push("This_Is_Our_Side");
                 } else {
-                    // Убираем метки [win] и [lose] у остальных сторон
-                    let cleanSide = sideWithoutLink.replace(/\s*\[win\]|\s*\[lose\]/g, '');
-                    newParts.push(cleanSide);
+                    newParts.push(sideWithoutLink);
                 }
             });
 
