@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-029: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-030: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -208,7 +208,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     html = cleanSpecialSymbols(html);
     html = html.replace(/&nbsp;/g, ' '); // Удаляем неразрывные пробелы
 
-    // Регулярное выражение для поиска боёв с учетом всех сторон (до 6)
+    // Регулярное выражение для поиска боёв
     let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*(.*?)<!--\d+-->/gs)];
     
     let battles = [];
@@ -237,9 +237,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         if (secretCode) battleLink += `&show=${secretCode}`;
         if (watchFromStart) battleLink += "&lt";
 
-        // Составляем строку с боем
         // Определяем имя игрока без уровня
-        // Определяем имя игрока без уровня (без [17])
         let playerBaseName = playerName.replace(/\[\d+(-\d+)?\]/, "").trim();
 
         // Определяем, в какой стороне находится игрок
@@ -253,23 +251,30 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             playerResult = "[win]";
         }
 
-        // 🛠 Исправленный код удаления игрока
+        // 🛠 Если удаляем никнейм, убираем всю сторону игрока
         if (removeMostCommon && playerSideIndex !== -1) {
-            // Удаляем только имя игрока из стороны, а не всю сторону
-            sidesParsed[playerSideIndex] = sidesParsed[playerSideIndex].filter(name =>
-                name.replace(/\[\d+(-\d+)?\]/, "").trim() !== playerBaseName
-            );
-
-            // Если после удаления игрока команда пустая – удаляем всю сторону
-            if (sidesParsed[playerSideIndex].length === 0) {
-                sidesParsed.splice(playerSideIndex, 1);
-                sidesStatus.splice(playerSideIndex, 1);
-            }
+            sidesParsed.splice(playerSideIndex, 1); // Удаляем всю сторону игрока
+            sidesStatus.splice(playerSideIndex, 1); // Удаляем её статус
         }
 
-        // Формируем строку с боем
-        let battleResult = formattedDateTime + " " + 
-            sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
+        // 🛠 Удаляем статусы [win] и [lose] у остальных участников ТОЛЬКО если чекбокс removeMostCommon ВКЛЮЧЕН
+        if (removeMostCommon) {
+            sidesParsed = sidesParsed.map(players =>
+                players.map(name => name.replace(/\s*\[win\]|\s*\[lose\]/g, ""))
+            );
+        }
+
+        // 🛠 Формируем строку с боем:
+        let battleResult;
+        if (removeMostCommon) {
+            // Если никнейм удаляем, добавляем [win] или [lose] после даты
+            battleResult = formattedDateTime + " " + playerResult + " " + 
+                sidesParsed.map(players => players.join(", ")).join(" vs ") + ` ${battleLink}`;
+        } else {
+            // Если никнейм оставляем, результат в бою у игрока остаётся
+            battleResult = formattedDateTime + " " +
+                sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
+        }
 
         battles.push({ dateTime: formattedDateTime, battleResult });
     }
