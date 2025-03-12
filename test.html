@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-007</h2>
+    <h2>Парсер боёв v40-008</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -147,37 +147,6 @@
     <button id="copyButton" onclick="copyResult()">Скопировать результат</button>
     
     <script>
-function getPlayerName(htmlContent) {
-    const battleMatches = [...htmlContent.matchAll(/<a class=pi href="pl_info\.php\?id=\d+">([^<]+)\[?\d*\]?<\/a>/g)];
-
-    let playerCounts = {};
-    
-    // Подсчитываем сколько раз встречается каждый ник
-    for (let match of battleMatches) {
-        let playerName = match[1].trim();
-        if (!playerCounts[playerName]) {
-            playerCounts[playerName] = 0;
-        }
-        playerCounts[playerName]++;
-    }
-
-    // Определяем самого частого игрока
-    let maxCount = 0;
-    let mostCommonPlayer = "";
-    for (let player in playerCounts) {
-        if (playerCounts[player] > maxCount) {
-            maxCount = playerCounts[player];
-            mostCommonPlayer = player;
-        }
-    }
-
-    if (!mostCommonPlayer) {
-        console.error("❌ Не удалось определить ник игрока.");
-        return "Результат";
-    }
-
-    return mostCommonPlayer;
-}
 
 function clearInput() {
     document.getElementById("battleInput").value = "";
@@ -206,14 +175,13 @@ function copyResult() {
 function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     html = cleanSpecialSymbols(html);
     html = html.replace(/&nbsp;/g, ' ');
-
+    let playerCounts = {}; // Сюда будем записывать частоту никнеймов
     let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*(.*?)<!--\d+-->/gs)];
     
     let battles = [];
     let useLordswm = document.getElementById('useLordswm').checked;
     let removeDate = document.getElementById("removeDate").checked;
     let removeMostCommon = document.getElementById("removeMostCommon").checked;
-    let playerName = getPlayerName(html);
     
     for (let match of battleMatches) {
         let warId = match[1];
@@ -224,6 +192,16 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
         let sides = participantsRaw.split(/\s+vs\s+/g);
         let sidesParsed = sides.map(side => extractPlayerNames(side));
+        // Добавляем никнеймы в статистику
+        for (let side of sidesParsed) {
+            for (let playerName of side) {
+                if (!playerCounts[playerName]) {
+                    playerCounts[playerName] = 0;
+                }
+                playerCounts[playerName]++;
+            }
+        }
+        
         let sidesStatus = sides.map(side => side.includes("<b>") ? "[win]" : "[lose]");
 
         let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
@@ -231,46 +209,27 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         if (secretCode) battleLink += `&show=${secretCode}`;
         if (watchFromStart) battleLink += "&lt";
 
-        let playerBaseName = playerName.replace(/\[\d+(-\d+)?\]/, "").trim();
-        console.log("playerBaseName", playerBaseName);
-        // Определяем индекс стороны игрока
-        let playerSideIndex = sidesParsed.findIndex(side =>
-            side.some(name => name.includes(playerBaseName))
-        );
-
-        // ✅ Определяем победу или поражение игрока
-        let playerResult = "[lose]";
-        if (playerSideIndex !== -1 && sidesStatus[playerSideIndex] === "[win]") {
-            playerResult = "[win]";
-        }
-
-        // ✅ Сначала удаляем сторону игрока
-        if (removeMostCommon && playerSideIndex !== -1) {
-            let sideBefore = sidesParsed.length;
-            sidesParsed = sidesParsed.filter(side => !side.some(name => name.includes(playerBaseName)));
-            let sideAfter = sidesParsed.length;
-
-            if (sideBefore === sideAfter) {
-                console.warn(`❌ Не удалось удалить сторону с игроком: ${playerBaseName}`);
-            } else {
-                console.log(`✅ Удалена сторона игрока: ${playerBaseName}`);
-            }
-        }
-
-        // ✅ Теперь формируем правильный battleResult
-        let battleResult;
-        if (removeMostCommon) {
-            // Если удаляем сторону игрока, результат идет первым
-            battleResult = `${formattedDateTime} ${playerResult} ` + 
-                sidesParsed.map(players => players.join(", ")).join(" vs ") + ` ${battleLink}`;
-        } else {
-            // Если никнейм оставляем, результат в бою у всех сохраняется
-            battleResult = `${formattedDateTime} ` +
-                sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
-        }
+        // Если никнейм оставляем, результат в бою у всех сохраняется
+        let battleResult = `${formattedDateTime} ` +
+            sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
 
         battles.push({ dateTime: formattedDateTime, battleResult });
     }
+    
+    // Определяем самого частого игрока (основного)
+    let maxCount = 0;
+    let mostCommonPlayer = "";
+
+    for (let player in playerCounts) {
+        if (playerCounts[player] > maxCount) {
+            maxCount = playerCounts[player];
+            mostCommonPlayer = player;
+        }
+    }
+
+    // Выводим в заголовок результата
+    document.getElementById("resultTitle").textContent = mostCommonPlayer;
+    console.log("mostCommonPlayer", mostCommonPlayer);
     
     battles.sort((a, b) => b.dateTime.localeCompare(a.dateTime));
     
@@ -325,8 +284,6 @@ function decodeHTMLEntities(text) {
 
 function processBattles() {
     let html = document.getElementById("battleInput").value;
-    let playerName = getPlayerName(html);
-    document.getElementById("resultTitle").textContent = playerName; // Обновляем заголовок
     let filters = document.getElementById("filterInput").value.split('\n').map(f => f.trim()).filter(f => f);
     let doFilter = document.getElementById("doFilter").checked;
     let onlyWins = document.getElementById("onlyWins").checked;
