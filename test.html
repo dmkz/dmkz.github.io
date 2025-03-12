@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-026</h2>
+    <h2>Парсер боёв v40-027</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -234,9 +234,11 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     if (removeMostCommon && mostCommonPlayer) {
         console.log("Обрабатываем ник:", mostCommonPlayer); // Отладка
 
-        // Убираем уровень из ника для поиска
-        let playerNameWithoutLevel = mostCommonPlayer.replace(/\[\d+\]$/, '');
-        let escapedPlayer = playerNameWithoutLevel.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        // Разбираем никнейм и экранируем специальные символы
+        let escapedPlayer = mostCommonPlayer.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+
+        // Формируем регулярное выражение, которое ищет ник вместе с уровнем
+        let playerRegex = new RegExp(`${escapedPlayer}\\s*\\[\\d+\\]`, "i");
 
         battles = battles.map(battle => {
             console.log("До обработки:", battle.battleResult);
@@ -256,8 +258,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
                 let sideWithoutLink = side.replace(/https?:\/\/\S+/, '').trim();
 
-                // Улучшенное регулярное выражение для поиска ника с уровнем
-                let playerRegex = new RegExp(`\\b${escapedPlayer}\\s*\\[\\d+\\]\\b`, "gi");
+                // Ищем сторону, где находится игрок
                 if (playerRegex.test(sideWithoutLink)) {
                     playerResult = side.includes("[win]") ? "[win]" : "[lose]";
                     newParts.push("This_Is_Our_Side");
@@ -267,7 +268,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             });
 
             if (playerResult === null) {
-                console.log("Игрок не найден в этой строке!");
+                console.log("Игрок не найден в этой строке:", battle.battleResult);
                 return battle;
             }
 
