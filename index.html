@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-016: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-017: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -150,17 +150,34 @@
 function getPlayerName(htmlContent) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, "text/html");
-    
+
     const header = doc.querySelector(".global_container_block_header");
+    let playerName = "";
+
     if (header) {
         const match = header.innerHTML.match(/Протокол боев\s+<a.*?><b>(.*?)<\/b><\/a>/);
         if (match) {
-            return match[1]; // Возвращает ник игрока
+            playerName = match[1]; // Основной ник без уровня
         }
     }
+
+    if (!playerName) {
+        console.error("Не удалось определить ник игрока.");
+        return "Результат";
+    }
+
+    // Ищем все уровни в боевых записях
+    const levelMatches = [...htmlContent.matchAll(new RegExp(`${playerName}\\[(\\d+)\\]`, "g"))];
     
-    console.error("Не удалось определить ник игрока.");
-    return "Результат"; // Если не найден, оставить стандартный заголовок
+    // Извлекаем уровни в виде чисел и сортируем
+    const levels = [...new Set(levelMatches.map(m => parseInt(m[1], 10)))].sort((a, b) => a - b);
+
+    if (levels.length > 0) {
+        // Если уровень один, просто добавляем его. Если несколько, записываем диапазон.
+        playerName += levels.length === 1 ? `[${levels[0]}]` : `[${levels[0]}-${levels[levels.length - 1]}]`;
+    }
+
+    return playerName;
 }
 function clearInput() {
     document.getElementById("battleInput").value = "";
