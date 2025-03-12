@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-021</h2>
+    <h2>Парсер боёв v40-022</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -231,17 +231,15 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     document.getElementById("resultTitle").textContent = mostCommonPlayer;
     console.log("mostCommonPlayer", mostCommonPlayer);
     
-    // Если включена опция удаления никнейма — удаляем всю сторону, где он был
     if (removeMostCommon && mostCommonPlayer) {
         console.log("Удаляем ник и его сторону:", mostCommonPlayer); // Отладка
 
-        // Экранируем спецсимволы в нике
         let escapedPlayer = mostCommonPlayer.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 
         battles = battles.map(battle => {
             console.log("До обработки:", battle.battleResult);
 
-            // Разделяем дату и результат боя
+            // Разбираем строку по формату "Дата Ник[Уровень] [win/lose] vs Другой_игрок[Уровень] [win/lose] https://..."
             let match = battle.battleResult.match(/^(\d{2}-\d{2}-\d{2} \d{2}:\d{2}) (.+)$/);
             if (!match) return battle; // Если формат сломан, пропускаем
 
@@ -249,33 +247,23 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
             // Разделяем стороны
             let parts = resultPart.split(" vs ");
-            let playerSideIndex = -1;
-            let playerWinStatus = "";
+            let newParts = [];
+            let battleLink = "";
 
-            // Определяем, в какой стороне находился игрок
-            for (let i = 0; i < parts.length; i++) {
-                if (new RegExp(`\\b${escapedPlayer}(\\s*\\[\\d+\\])?\\b`, "gi").test(parts[i])) {
-                    playerSideIndex = i;
-                    playerWinStatus = parts[i].includes("[win]") ? "[win]" : "[lose]";
-                    break;
+            parts.forEach(side => {
+                // Отделяем ссылку
+                let sideWithoutLink = side.replace(/https?:\/\/\S+/, '').trim();
+                let linkMatch = side.match(/https?:\/\/\S+/);
+                if (linkMatch) battleLink = linkMatch[0];
+
+                // Если в стороне есть удаляемый ник, не добавляем её
+                if (!new RegExp(`\\b${escapedPlayer}(\\s*\\[\\d+\\])?\\b`, "gi").test(sideWithoutLink)) {
+                    newParts.push(sideWithoutLink);
                 }
-            }
+            });
 
-            // Если игрок найден, удаляем его сторону
-            if (playerSideIndex !== -1) {
-                parts.splice(playerSideIndex, 1);
-            }
-
-            // Убираем все "[win]" и "[lose]" у оставшихся сторон
-            parts = parts.map(side => side.replace(/\s*\[win\]|\s*\[lose\]/g, "").trim());
-
-            // Извлекаем ссылку на бой (убираем дубли)
-            let battleLinks = [...new Set(battle.battleResult.match(/https?:\/\/\S+/g) || [])];
-            let battleLink = battleLinks.length > 0 ? battleLinks[0] : "";
-
-            // Убираем пустые стороны и лишний "vs"
-            let cleanedSides = parts.filter(side => side.length > 0);
-            let cleanedResult = `${dateTime} ${playerWinStatus} ${cleanedSides.join(" vs ")} ${battleLink}`.trim();
+            // Если осталось только одно имя, убираем "vs"
+            let cleanedResult = `${dateTime} ${newParts.join(" vs ")} ${battleLink}`.trim();
 
             console.log("После обработки:", cleanedResult); // Отладка
             return { ...battle, battleResult: cleanedResult };
