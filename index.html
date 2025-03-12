@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-016: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-015: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -307,11 +307,15 @@ function processBattles() {
     let doFilter = document.getElementById("doFilter").checked;
     let onlyWins = document.getElementById("onlyWins").checked;
     let watchFromStart = document.getElementById("watchFromStart").checked;
-    let useNumbering = document.getElementById("useNumbering").checked;
-    let startNumber = parseInt(document.getElementById("startNumber").value) || 1;
 
-    let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNumbering, startNumber);
+    let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart);
     document.getElementById("result").textContent = result || "Ничего не найдено";
+    
+    // Скрываем входные данные и настройки
+    document.getElementById("inputContainer").style.display = "none";
+    document.getElementById("toggleButton").style.display = "block";
+    document.getElementById("toggleButton").textContent = "Развернуть настройки";
+    // Показываем кнопку "Развернуть"
 }
 
 function toggleInput() {
