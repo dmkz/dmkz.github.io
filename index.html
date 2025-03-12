@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-012: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-013: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -199,7 +199,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
 
         // Извлекаем имена игроков
         let leftParticipants = extractPlayerNames(leftSideRaw);
-        let rightParticipants = extractPlayerNames(rightSideRaw, true);
+        let rightParticipants = extractPlayerNames(rightSideRaw);
 
         // Добавляем метки победы/поражения
         let leftStatus = leftIsWinner ? "[win]" : "[lose]";
@@ -246,30 +246,24 @@ function cleanSpecialSymbols(html) {
     return html.replace(/<[^>]+>(&[^;]+;|\s*)<\/[^>]+>/g, ''); // Удаляем "мусорные" символы
 }
 
-/**
- * Функция извлечения имен игроков, учитывая HTML-теги (`<b>`, `<font>`, `<i>` и т.д.)
- */
-function extractPlayerNames(text, isRightSide = false) {
-    let cleanedText = text.replace(/<[^>]+>/g, '').trim(); // Удаляем все HTML-теги
+function extractPlayerNames(text) {
+    let cleanedText = text.replace(/<[^>]+>/g, '').trim(); // Убираем HTML-теги
     let names = [];
 
-    // Если это правая сторона и название группы (например, "Вражеский отряд"), не разделяем
-    if (isRightSide && !/\[\d+\]/.test(cleanedText)) {
-        return [decodeHTMLEntities(cleanedText)];
-    }
-
-    // Улучшенный regex: ищем ники с пробелами, тире и уровнем в квадратных скобках
-    let playerRegex = /([A-Za-zА-Яа-я0-9ёЁ\-\s]+)\[(\d+)]/g; 
+    // Улучшенный regex: ищем ники с пробелами, тире, апострофами и (возможно) уровнем в квадратных скобках
+    let playerRegex = /([A-Za-zА-Яа-яЁё0-9\s\-\']+)(?:\[(\d+)\])?/g;
     let match;
 
     while ((match = playerRegex.exec(cleanedText)) !== null) {
-        let cleanedName = decodeHTMLEntities(match[1].trim()) + `[${match[2]}]`; // Убираем HTML-сущности
+        let cleanedName = decodeHTMLEntities(match[1].trim());
+        if (match[2]) {
+            cleanedName += `[${match[2]}]`; // Добавляем уровень, если он есть
+        }
         names.push(cleanedName);
     }
 
     return names.length > 0 ? names : ["Неизвестный"];
 }
-
 
 /**
  * Функция декодирования HTML-сущностей (&nbsp;, &tau;, &#9674; и т.д.)
