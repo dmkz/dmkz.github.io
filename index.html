@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-002</h2>
+    <h2>Парсер боёв v39-003: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -172,14 +172,19 @@ function copyResult() {
 }
 
 function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNumbering, startNumber) {
-    let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+).*?<BR>/gs)];
+    // Удаляем HTML-теги, содержащие только специальные символы (&nbsp;, &tau;, &#9674; и т.д.)
+    html = cleanSpecialSymbols(html);
+
+    // Ищем все бои в HTML-коде
+    let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?.*?<BR>/gs)];
 
     let battles = [];
     let useLordswm = document.getElementById('useLordswm').checked;
 
     for (let match of battleMatches) {
-        let warId = match[1];
-        let battleBlock = match[0];
+        let warId = match[1]; // ID боя
+        let secretCode = match[2] || ""; // Секретный код (если есть)
+        let battleBlock = match[0]; // Весь найденный блок
 
         // Извлекаем дату и время
         let dateMatch = battleBlock.match(/(\d{2}-\d{2}-\d{2} \d{2}:\d{2})/);
@@ -198,7 +203,8 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
         let matchParticipant;
         
         while ((matchParticipant = participantRegex.exec(rawParticipants)) !== null) {
-            participants.push(matchParticipant[1].trim());
+            let cleanedName = decodeHTMLEntities(matchParticipant[1].trim()); // Декодируем HTML-сущности
+            participants.push(cleanedName);
         }
 
         if (participants.length < 2) {
@@ -207,7 +213,13 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
 
         // Формируем ссылку на бой
         let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
-        let battleLink = `https://${baseDomain}/warlog.php?warid=${warId}` + (watchFromStart ? "&lt" : "");
+        let battleLink = `https://${baseDomain}/warlog.php?warid=${warId}`;
+        if (secretCode) {
+            battleLink += `&show=${secretCode}`; // Добавляем секретный код, если он есть
+        }
+        if (watchFromStart) {
+            battleLink += "&lt"; // Добавляем флаг начала боя, если включено
+        }
 
         battles.push({ warId, dateTime, participants, isWin, battleLink });
     }
@@ -233,6 +245,21 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
     });
 
     return numberedResults.join("\n");
+}
+
+/**
+ * Функция для удаления HTML-тегов, содержащих только специальные символы
+ */
+function cleanSpecialSymbols(html) {
+    return html.replace(/<[^>]+>(&[^;]+;|\s*)<\/[^>]+>/g, ''); // Удаляем теги, содержащие только HTML-сущности
+}
+
+/**
+ * Функция для декодирования HTML-сущностей (&nbsp;, &tau;, &#9674; и т.д.)
+ */
+function decodeHTMLEntities(text) {
+    let doc = new DOMParser().parseFromString(text, "text/html");
+    return doc.documentElement.textContent;
 }
 
   
