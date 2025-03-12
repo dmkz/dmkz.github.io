@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-003: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-004: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -172,10 +172,8 @@ function copyResult() {
 }
 
 function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNumbering, startNumber) {
-    // Удаляем HTML-теги, содержащие только специальные символы (&nbsp;, &tau;, &#9674; и т.д.)
     html = cleanSpecialSymbols(html);
 
-    // Ищем все бои в HTML-коде
     let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?.*?<BR>/gs)];
 
     let battles = [];
@@ -184,7 +182,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
     for (let match of battleMatches) {
         let warId = match[1]; // ID боя
         let secretCode = match[2] || ""; // Секретный код (если есть)
-        let battleBlock = match[0]; // Весь найденный блок
+        let battleBlock = match[0];
 
         // Извлекаем дату и время
         let dateMatch = battleBlock.match(/(\d{2}-\d{2}-\d{2} \d{2}:\d{2})/);
@@ -194,34 +192,30 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
         let isWin = battleBlock.includes("[win]");
 
         // **Извлекаем участников боя**
-        let participantsMatch = battleBlock.match(/<\/a>(.*?)<i>/);
-        let rawParticipants = participantsMatch ? participantsMatch[1] : "";
-
-        // Разделяем участников по " vs ", но только если оно **не внутри тегов**
-        let participantRegex = />([^<]+)</g;
-        let participants = [];
-        let matchParticipant;
+        let participantsMatch = battleBlock.match(/<a[^>]*>(.*?)<\/a>(.*?)vs(.*)/s);
         
-        while ((matchParticipant = participantRegex.exec(rawParticipants)) !== null) {
-            let cleanedName = decodeHTMLEntities(matchParticipant[1].trim()); // Декодируем HTML-сущности
-            participants.push(cleanedName);
-        }
+        if (!participantsMatch) continue; // Пропускаем, если бой не найден
+        
+        let leftSideRaw = participantsMatch[1].trim(); // Левый участник (или группа)
+        let rightSideRaw = participantsMatch[3].trim(); // Правый участник (или группа)
 
-        if (participants.length < 2) {
-            participants = ["Неизвестный"];
-        }
+        // **Обрабатываем левую сторону**
+        let leftParticipants = extractPlayerNames(leftSideRaw);
+
+        // **Обрабатываем правую сторону**
+        let rightParticipants = extractPlayerNames(rightSideRaw);
 
         // Формируем ссылку на бой
         let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
         let battleLink = `https://${baseDomain}/warlog.php?warid=${warId}`;
         if (secretCode) {
-            battleLink += `&show=${secretCode}`; // Добавляем секретный код, если он есть
+            battleLink += `&show=${secretCode}`;
         }
         if (watchFromStart) {
-            battleLink += "&lt"; // Добавляем флаг начала боя, если включено
+            battleLink += "&lt";
         }
 
-        battles.push({ warId, dateTime, participants, isWin, battleLink });
+        battles.push({ warId, dateTime, leftParticipants, rightParticipants, isWin, battleLink });
     }
 
     // Сортировка по дате
@@ -229,7 +223,12 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
 
     // Фильтрация по запрещенным боям (если включена)
     if (doFilter) {
-        battles = battles.filter(battle => filters.some(f => battle.participants.some(p => p.includes(f))));
+        battles = battles.filter(battle => 
+            filters.some(f => 
+                battle.leftParticipants.some(p => p.includes(f)) ||
+                battle.rightParticipants.some(p => p.includes(f))
+            )
+        );
     }
 
     // Фильтрация "только победы"
@@ -241,21 +240,37 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
     let battleNumber = startNumber;
     let numberedResults = battles.map(battle => {
         let battleIndex = useNumbering ? (battle.isWin ? battleNumber++ : "-") : "";
-        return `${battleIndex ? battleIndex + ". " : ""}${battle.dateTime} ${battle.participants.join(" vs ")} ${battle.isWin ? '[win]' : '[lose]'} ${battle.battleLink}`;
+        return `${battleIndex ? battleIndex + ". " : ""}${battle.dateTime} ${battle.leftParticipants.join(" vs ")} vs ${battle.rightParticipants.join(", ")} ${battle.isWin ? '[win]' : '[lose]'} ${battle.battleLink}`;
     });
 
     return numberedResults.join("\n");
 }
 
 /**
- * Функция для удаления HTML-тегов, содержащих только специальные символы
+ * Удаляем HTML-теги, содержащие только специальные символы
  */
 function cleanSpecialSymbols(html) {
-    return html.replace(/<[^>]+>(&[^;]+;|\s*)<\/[^>]+>/g, ''); // Удаляем теги, содержащие только HTML-сущности
+    return html.replace(/<[^>]+>(&[^;]+;|\s*)<\/[^>]+>/g, ''); // Удаляем "мусорные" символы
 }
 
 /**
- * Функция для декодирования HTML-сущностей (&nbsp;, &tau;, &#9674; и т.д.)
+ * Функция извлечения имен игроков, учитывая запятые и HTML-код
+ */
+function extractPlayerNames(text) {
+    let playerRegex = /<a[^>]*>(.*?)<\/a>/g;
+    let names = [];
+    let match;
+
+    while ((match = playerRegex.exec(text)) !== null) {
+        let cleanedName = decodeHTMLEntities(match[1].trim()); // Декодируем HTML
+        names.push(cleanedName);
+    }
+
+    return names.length > 0 ? names : ["Неизвестный"];
+}
+
+/**
+ * Функция декодирования HTML-сущностей (&nbsp;, &tau;, &#9674; и т.д.)
  */
 function decodeHTMLEntities(text) {
     let doc = new DOMParser().parseFromString(text, "text/html");
