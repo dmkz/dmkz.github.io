@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-016</h2>
+    <h2>Парсер боёв v40-017</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -248,7 +248,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
             // Определяем, в какой стороне находился игрок
             for (let i = 0; i < parts.length; i++) {
-                if (new RegExp(`${escapedPlayer}(\\s*\\[\\d+\\])?`, "gi").test(parts[i])) {
+                if (new RegExp(`\\b${escapedPlayer}(\\s*\\[\\d+\\])?\\b`, "gi").test(parts[i])) {
                     playerSideIndex = i;
                     playerWinStatus = parts[i].includes("[win]") ? "[win]" : "[lose]";
                     break;
@@ -264,12 +264,16 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             parts = parts.map(side => side.replace(/\s*\[win\]|\s*\[lose\]/g, "").trim());
 
             // Получаем ссылку на бой из старого battleResult
-            let battleLink = battle.battleResult.match(/https?:\/\/\S+/)[0];
+            let battleLinkMatch = battle.battleResult.match(/https?:\/\/\S+/g);
+            let battleLink = battleLinkMatch ? battleLinkMatch[0] : "";
 
-            // Формируем новый результат без дублирования даты
-            let cleanedResult = `${battle.dateTime} ${playerWinStatus} ` +
-                (parts.length > 1 ? parts.join(" vs ") : parts[0]) +
-                ` ${battleLink}`;
+            // Убираем пустые стороны
+            parts = parts.filter(side => side.trim().length > 0);
+
+            // Формируем новый результат без дублирования даты и с одной записью [win]/[lose]
+            let cleanedResult = `${battle.dateTime} ${playerWinStatus} ` + 
+                (parts.length > 0 ? parts.join(" vs ") : "") +
+                ` ${battleLink}`.trim();
 
             console.log("После обработки:", cleanedResult); // Отладка
             return { ...battle, battleResult: cleanedResult };
