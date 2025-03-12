@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-002</h2>
+    <h2>Парсер боёв v40-003</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -236,6 +236,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             side.some(name => name.replace(/\[\d+(-\d+)?\]/, "").trim() === playerBaseName)
         );
 
+        // ✅ Определяем победу или поражение игрока
         let playerResult = "[lose]";
         if (playerSideIndex !== -1 && sidesStatus[playerSideIndex] === "[win]") {
             playerResult = "[win]";
@@ -247,19 +248,21 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             sidesStatus.splice(playerSideIndex, 1);
         }
 
-        // ✅ Убираем статусы [win] и [lose] у остальных игроков, если removeMostCommon включен
+        // ✅ Если чекбокс включен, убираем [win]/[lose] у остальных игроков
         if (removeMostCommon) {
             sidesParsed = sidesParsed.map(players =>
                 players.map(name => name.replace(/\s*\[win\]|\s*\[lose\]/g, ""))
             );
         }
 
-        // ✅ Формируем итоговую строку с результатом
+        // ✅ Формируем итоговую строку
         let battleResult;
         if (removeMostCommon) {
+            // Если удаляем сторону игрока, результат идет первым
             battleResult = `${formattedDateTime} ${playerResult} ` + 
                 sidesParsed.map(players => players.join(", ")).join(" vs ") + ` ${battleLink}`;
         } else {
+            // Если никнейм оставляем, результат в бою у всех сохраняется
             battleResult = formattedDateTime + " " +
                 sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
         }
