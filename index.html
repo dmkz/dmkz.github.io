@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-015: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-016: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -147,6 +147,21 @@
     <button id="copyButton" onclick="copyResult()">Скопировать результат</button>
     
     <script>
+function getPlayerName(htmlContent) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, "text/html");
+    
+    const header = doc.querySelector(".global_container_block_header");
+    if (header) {
+        const match = header.innerHTML.match(/Протокол боев\s+<a.*?><b>(.*?)<\/b><\/a>/);
+        if (match) {
+            return match[1]; // Возвращает ник игрока
+        }
+    }
+    
+    console.error("Не удалось определить ник игрока.");
+    return "Результат"; // Если не найден, оставить стандартный заголовок
+}
 function clearInput() {
     document.getElementById("battleInput").value = "";
 }
@@ -318,6 +333,8 @@ function decodeHTMLEntities(text) {
 
 function processBattles() {
     let html = document.getElementById("battleInput").value;
+    let playerName = getPlayerName(html);
+    document.getElementById("resultTitle").textContent = playerName; // Обновляем заголовок
     let filters = document.getElementById("filterInput").value.split('\n').map(f => f.trim()).filter(f => f);
     let doFilter = document.getElementById("doFilter").checked;
     let onlyWins = document.getElementById("onlyWins").checked;
