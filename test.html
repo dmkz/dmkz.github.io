@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-005</h2>
+    <h2>Парсер боёв v40-006</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -151,34 +151,41 @@ function getPlayerName(htmlContent) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, "text/html");
 
-    const header = doc.querySelector(".global_container_block_header");
     let playerName = "";
 
+    // Основной поиск в заголовке страницы
+    const header = doc.querySelector(".global_container_block_header");
     if (header) {
-        const match = header.innerHTML.match(/Протокол боев\s+<a.*?><b>(.*?)<\/b><\/a>/);
+        const match = header.innerHTML.match(/Протокол боев\s*<a[^>]+><b>([^<]+)<\/b><\/a>/i);
         if (match) {
-            playerName = match[1]; // Основной ник без уровня
+            playerName = match[1].trim();
+        }
+    }
+
+    // Альтернативный поиск по боевым записям, если заголовок не найден
+    if (!playerName) {
+        const playerMatch = htmlContent.match(/<a[^>]+href=['"]pl_info\.php\?id=\d+['"][^>]*><font[^>]*>([^<]+)<\/font><\/a>/i);
+        if (playerMatch) {
+            playerName = playerMatch[1].trim();
         }
     }
 
     if (!playerName) {
-        console.error("Не удалось определить ник игрока.");
+        console.error("❌ Не удалось определить ник игрока.");
         return "Результат";
     }
 
-    // Ищем все уровни в боевых записях
+    // Ищем уровни игрока в боевых записях
     const levelMatches = [...htmlContent.matchAll(new RegExp(`${playerName}\\[(\\d+)\\]`, "g"))];
-    
-    // Извлекаем уровни в виде чисел и сортируем
     const levels = [...new Set(levelMatches.map(m => parseInt(m[1], 10)))].sort((a, b) => a - b);
 
     if (levels.length > 0) {
-        // Если уровень один, просто добавляем его. Если несколько, записываем диапазон.
         playerName += levels.length === 1 ? `[${levels[0]}]` : `[${levels[0]}-${levels[levels.length - 1]}]`;
     }
 
     return playerName;
 }
+
 function clearInput() {
     document.getElementById("battleInput").value = "";
 }
