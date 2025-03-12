@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-010: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-011: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -189,11 +189,15 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
         let leftSideRaw = match[4].trim(); // Левая сторона боя
         let rightSideRaw = match[5].trim(); // Правая сторона боя
 
-        // Определяем победителя
+        // Определяем, является ли вся сторона победителем
         let leftIsWinner = /<b>.*?<\/b>/.test(leftSideRaw);
         let rightIsWinner = /<b>.*?<\/b>/.test(rightSideRaw);
 
-        // Извлекаем имена
+        // Исправленный алгоритм: если хотя бы у одного игрока стороны есть <b>, то вся сторона победила
+        if (leftSideRaw.includes("<b>")) leftIsWinner = true;
+        if (rightSideRaw.includes("<b>")) rightIsWinner = true;
+
+        // Извлекаем имена игроков
         let leftParticipants = extractPlayerNames(leftSideRaw);
         let rightParticipants = extractPlayerNames(rightSideRaw, true);
 
@@ -232,7 +236,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
         return `${battleIndex ? battleIndex + ". " : ""}${battle.dateTime} ${battle.leftParticipants.join(", ")} ${battle.leftStatus} vs ${battle.rightParticipants.join(", ")} ${battle.rightStatus} ${battle.battleLink}`;
     });
 
-    return numberedResults.join("\n"); // ВОТ ЭТО было исправлено - теперь сохраняются переносы строк
+    return numberedResults.join("\n"); // Переносы строк остаются
 }
 
 /**
@@ -272,9 +276,6 @@ function decodeHTMLEntities(text) {
     let doc = new DOMParser().parseFromString(text, "text/html");
     return doc.documentElement.textContent;
 }
-
-
-
 
 
   
