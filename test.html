@@ -235,11 +235,11 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     if (removeMostCommon && mostCommonPlayer) {
         console.log("Удаляем ник:", mostCommonPlayer); // Проверяем, какой ник удаляем
 
-        // Правильное экранирование никнейма
-        let escapedPlayer = mostCommonPlayer.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        // Экранируем все спецсимволы, включая []
+        let escapedPlayer = mostCommonPlayer.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&').replace(/\[/g, '\\[').replace(/\]/g, '\\]');
 
         // Регулярное выражение для удаления ника + возможного уровня [число]
-        let regex = new RegExp(`\\b${escapedPlayer}(\\s*\\[\\d+\\])?\\b`, "gi");
+        let regex = new RegExp(`\\b${escapedPlayer}\\b`, "gi");
 
         battles = battles.map(battle => {
             let cleanedResult = battle.battleResult
