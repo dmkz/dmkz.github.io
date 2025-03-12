@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-021: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-022: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -238,7 +238,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         // Составляем строку с боем
         let battleResult = `${formattedDateTime} ` + sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
 
-        battles.push(battleResult);
+        battles.push({ dateTime: formattedDateTime, battleResult });
     }
     
     battles.sort((a, b) => b.dateTime.localeCompare(a.dateTime));
@@ -250,7 +250,9 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     }
     
     if (removeDate) {
-        battles = battles.map(battle => battle.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, ''));
+        battles = battles.map(battle => battle.battleResult.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, ''));
+    } else {
+        battles = battles.map(battle => battle.battleResult);
     }
     
     return battles.join("\n"); // Переносы строк остаются
