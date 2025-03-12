@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-022: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-023: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -245,7 +245,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     
     if (doFilter && filters.length > 0) {
         battles = battles.filter(battle =>
-            filters.some(filterText => battle.includes(filterText))
+            filters.some(filterText => battle.battleResult.includes(filterText))
         );
     }
     
