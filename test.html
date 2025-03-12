@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-018</h2>
+    <h2>Парсер боёв v40-019</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -270,10 +270,10 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             // Убираем пустые стороны
             parts = parts.filter(side => side.trim().length > 0);
 
-            // Формируем новый результат без дублирования даты и ссылки
+            // **Исправляем дублирование даты**  
             let cleanedResult = `${battle.dateTime} ${playerWinStatus}` +
                 (parts.length > 0 ? ` ${parts.join(" vs ")}` : "") +
-                ` ${battleLink}`.trim();
+                ` ${battleLink}`;
 
             // Убираем возможные двойные пробелы
             cleanedResult = cleanedResult.replace(/\s{2,}/g, " ");
