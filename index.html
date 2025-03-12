@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-020: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-021: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -218,7 +218,8 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     for (let match of battleMatches) {
         let warId = match[1];
         let secretCode = match[2] || "";
-        let dateTime = match[3];
+        let [day, month, year, time] = match[3].split(/[- ]/);
+        let formattedDateTime = `${year}-${month}-${day} ${time}`;
         let participantsRaw = match[4].trim(); // Все стороны боя
 
         // Разделяем стороны по "vs"
@@ -235,10 +236,12 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         if (watchFromStart) battleLink += "&lt";
 
         // Составляем строку с боем
-        let battleResult = `${dateTime} ` + sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
+        let battleResult = `${formattedDateTime} ` + sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
 
         battles.push(battleResult);
     }
+    
+    battles.sort((a, b) => b.dateTime.localeCompare(a.dateTime));
     
     if (doFilter && filters.length > 0) {
         battles = battles.filter(battle =>
