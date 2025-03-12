@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-004: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-005: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -172,9 +172,11 @@ function copyResult() {
 }
 
 function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNumbering, startNumber) {
+    // Удаляем HTML-теги, содержащие только специальные символы
     html = cleanSpecialSymbols(html);
 
-    let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?.*?<BR>/gs)];
+    // Регулярное выражение для поиска боев
+    let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?.*?<\/a>: (.*?) vs (.*?)<BR>/gs)];
 
     let battles = [];
     let useLordswm = document.getElementById('useLordswm').checked;
@@ -191,13 +193,9 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
         // Определяем, является ли бой победным
         let isWin = battleBlock.includes("[win]");
 
-        // **Извлекаем участников боя**
-        let participantsMatch = battleBlock.match(/<a[^>]*>(.*?)<\/a>(.*?)vs(.*)/s);
-        
-        if (!participantsMatch) continue; // Пропускаем, если бой не найден
-        
-        let leftSideRaw = participantsMatch[1].trim(); // Левый участник (или группа)
-        let rightSideRaw = participantsMatch[3].trim(); // Правый участник (или группа)
+        // Извлекаем левую и правую стороны боя
+        let leftSideRaw = match[3].trim();
+        let rightSideRaw = match[4].trim();
 
         // **Обрабатываем левую сторону**
         let leftParticipants = extractPlayerNames(leftSideRaw);
