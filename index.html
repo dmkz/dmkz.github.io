@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v38</h2>
+    <h2>Парсер боёв v39</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -192,7 +192,9 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         let isWin = match[6];
         let left = match[3].replace(/<.*?>/g, '').trim();
         let right = match[4].replace(/<.*?>/g, '').trim();
-        
+        console.log("left", left);
+        console.log("right", right);
+        console.log("isWin", isWin);
         // Подсчет встречаемости имен
         nameCounts[left] = (nameCounts[left] || 0) + 1;
         nameCounts[right] = (nameCounts[right] || 0) + 1;
