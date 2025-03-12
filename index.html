@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-007: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-008: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -172,7 +172,7 @@ function copyResult() {
 }
 
 function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNumbering, startNumber) {
-    // Удаляем HTML-теги, содержащие только специальные символы
+    // Удаляем HTML-теги, содержащие только специальные символы (например, &tau;)
     html = cleanSpecialSymbols(html);
 
     // Регулярное выражение для поиска боев
@@ -190,21 +190,26 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
         let dateMatch = battleBlock.match(/(\d{2}-\d{2}-\d{2} \d{2}:\d{2})/);
         let dateTime = dateMatch ? dateMatch[1] : "Дата неизвестна";
 
-        // Определяем, является ли бой победным
-        let isWin = battleBlock.includes("[win]");
-
-        // Удаляем не относящиеся к боям теги (например, &tau;)
+        // Удаляем ненужные HTML-элементы (например, &tau;)
         let cleanedBattleBlock = battleBlock.replace(/<b>\s*&[^;]+;\s*<\/b>/g, "");
 
         // Извлекаем левую и правую стороны боя
         let leftSideRaw = match[3].trim();
         let rightSideRaw = match[4].trim();
 
+        // Определяем, какая сторона победила
+        let leftIsWinner = /<b>.*?<\/b>/.test(leftSideRaw);
+        let rightIsWinner = /<b>.*?<\/b>/.test(rightSideRaw);
+
         // **Обрабатываем левую сторону**
         let leftParticipants = extractPlayerNames(leftSideRaw);
 
         // **Обрабатываем правую сторону**
-        let rightParticipants = extractPlayerNames(rightSideRaw, true); // Передаем флаг, чтобы не разделять группы
+        let rightParticipants = extractPlayerNames(rightSideRaw, true);
+
+        // Добавляем статус победы/поражения
+        let leftStatus = leftIsWinner ? "[win]" : "[lose]";
+        let rightStatus = rightIsWinner ? "[win]" : "[lose]";
 
         // Формируем ссылку на бой
         let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
@@ -216,7 +221,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
             battleLink += "&lt";
         }
 
-        battles.push({ warId, dateTime, leftParticipants, rightParticipants, isWin, battleLink });
+        battles.push({ warId, dateTime, leftParticipants, leftStatus, rightParticipants, rightStatus, battleLink });
     }
 
     // Сортировка по дате
@@ -234,21 +239,21 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
 
     // Фильтрация "только победы"
     if (onlyWins) {
-        battles = battles.filter(battle => battle.isWin);
+        battles = battles.filter(battle => battle.leftStatus === "[win]" || battle.rightStatus === "[win]");
     }
 
     // Нумерация победных боев
     let battleNumber = startNumber;
     let numberedResults = battles.map(battle => {
-        let battleIndex = useNumbering ? (battle.isWin ? battleNumber++ : "-") : "";
-        return `${battleIndex ? battleIndex + ". " : ""}${battle.dateTime} ${battle.leftParticipants.join(" vs ")} vs ${battle.rightParticipants.join(" ")} ${battle.isWin ? '[win]' : '[lose]'} ${battle.battleLink}`;
+        let battleIndex = useNumbering ? (battle.leftStatus === "[win]" || battle.rightStatus === "[win]" ? battleNumber++ : "-") : "";
+        return `${battleIndex ? battleIndex + ". " : ""}${dateTime} ${battle.leftParticipants.join(", ")} ${battle.leftStatus} vs ${battle.rightParticipants.join(", ")} ${battle.rightStatus} ${battle.battleLink}`;
     });
 
-    return numberedResults.join("\n");
+    return numberedResults.join("\n").replace(/\s+/g, " "); // Убираем лишние пробелы
 }
 
 /**
- * Удаляем HTML-теги, содержащие только специальные символы (например, &tau;)
+ * Удаляем HTML-теги, содержащие только специальные символы
  */
 function cleanSpecialSymbols(html) {
     return html.replace(/<[^>]+>(&[^;]+;|\s*)<\/[^>]+>/g, ''); // Удаляем "мусорные" символы
@@ -258,15 +263,15 @@ function cleanSpecialSymbols(html) {
  * Функция извлечения имен игроков, учитывая HTML-теги (`<b>`, `<font>`, `<i>` и т.д.)
  */
 function extractPlayerNames(text, isRightSide = false) {
-    let cleanedText = text.replace(/<[^>]+>/g, ''); // Удаляем все HTML-теги, оставляя только текст
+    let cleanedText = text.replace(/<[^>]+>/g, '').trim(); // Удаляем все HTML-теги, оставляя только текст
     let names = [];
 
-    // Если это правая сторона, и там фраза без квадратных скобок, то это группа (например, "Вражеский отряд")
+    // Если это правая сторона и это название группы (например, "Вражеский отряд"), не разделяем
     if (isRightSide && !/\[\d+\]/.test(cleanedText)) {
-        return [decodeHTMLEntities(cleanedText.trim())];
+        return [decodeHTMLEntities(cleanedText)];
     }
 
-    let playerRegex = /(?:^|\s)([^\s,]+(?:\[\d+\])?)(?=\s|,|$)/g; // Ищем имена с уровнем (например, "Игрок1[17]")
+    let playerRegex = /(?:^|\s)([^\s,]+(?:\[\d+\])?)(?=\s|,|$)/g; // Ищем имена с уровнями (например, "Игрок1[17]")
     let match;
 
     while ((match = playerRegex.exec(cleanedText)) !== null) {
