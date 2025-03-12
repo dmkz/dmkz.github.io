@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-004</h2>
+    <h2>Парсер боёв v40-005</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -233,6 +233,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
         let playerBaseName = playerName.replace(/\[\d+(-\d+)?\]/, "").trim();
         console.log("playerBaseName", playerBaseName);
+        // Определяем индекс стороны игрока
         let playerSideIndex = sidesParsed.findIndex(side =>
             side.some(name => name.includes(playerBaseName))
         );
@@ -243,14 +244,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             playerResult = "[win]";
         }
 
-        // ✅ Если удаляем сторону, оставляем только статус и вторую сторону
-        if (removeMostCommon && playerSideIndex !== -1) {
-            battleResult = `${formattedDateTime} ${playerResult} ${sidesParsed.map(players => players.join(", ")).join(" vs ")} ${battleLink}`;
-        } else {
-            battleResult = `${formattedDateTime} ${sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ")} ${battleLink}`;
-        }
-
-        // ✅ Удаляем всю сторону, содержащую игрока, если чекбокс removeMostCommon включен
+        // ✅ Сначала удаляем сторону игрока
         if (removeMostCommon && playerSideIndex !== -1) {
             let sideBefore = sidesParsed.length;
             sidesParsed = sidesParsed.filter(side => !side.some(name => name.includes(playerBaseName)));
@@ -263,14 +257,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             }
         }
 
-        // ✅ Если чекбокс включен, убираем [win]/[lose] у остальных игроков
-        if (removeMostCommon) {
-            sidesParsed = sidesParsed.map(players =>
-                players.map(name => name.replace(/\s*\[win\]|\s*\[lose\]/g, ""))
-            );
-        }
-
-        // ✅ Формируем итоговую строку
+        // ✅ Теперь формируем правильный battleResult
         let battleResult;
         if (removeMostCommon) {
             // Если удаляем сторону игрока, результат идет первым
@@ -278,7 +265,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
                 sidesParsed.map(players => players.join(", ")).join(" vs ") + ` ${battleLink}`;
         } else {
             // Если никнейм оставляем, результат в бою у всех сохраняется
-            battleResult = formattedDateTime + " " +
+            battleResult = `${formattedDateTime} ` +
                 sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
         }
 
