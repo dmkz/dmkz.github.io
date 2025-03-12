@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-008</h2>
+    <h2>Парсер боёв v40-009</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -230,6 +230,14 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     // Выводим в заголовок результата
     document.getElementById("resultTitle").textContent = mostCommonPlayer;
     console.log("mostCommonPlayer", mostCommonPlayer);
+    
+    // Если включена опция удаления никнейма — убираем его из всех боёв
+    if (removeMostCommon && mostCommonPlayer) {
+        battles = battles.map(battle => {
+            let cleanedResult = battle.battleResult.replace(new RegExp(`\\b${mostCommonPlayer}\\b(\\[\\d+\\])?`, "g"), "").replace(/\s+,/g, ",").replace(/\s+vs\s+/g, " vs ").trim();
+            return { ...battle, battleResult: cleanedResult };
+        });
+    }
     
     battles.sort((a, b) => b.dateTime.localeCompare(a.dateTime));
     
