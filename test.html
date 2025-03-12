@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-014</h2>
+    <h2>Парсер боёв v40-015</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -233,7 +233,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     
     // Если включена опция удаления никнейма — удаляем всю сторону, где он был
     if (removeMostCommon && mostCommonPlayer) {
-        console.log("Удаляем ник и его сторону:", mostCommonPlayer); // Проверяем, кого удаляем
+        console.log("Удаляем ник и его сторону:", mostCommonPlayer); // Отладка
 
         // Экранируем спецсимволы в нике
         let escapedPlayer = mostCommonPlayer.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
@@ -260,11 +260,13 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
                 parts.splice(playerSideIndex, 1);
             }
 
-            // Убираем все "[win]" и "[lose]" у сторон
+            // Убираем все "[win]" и "[lose]" у оставшихся сторон
             parts = parts.map(side => side.replace(/\s*\[win\]|\s*\[lose\]/g, "").trim());
 
-            // Собираем строку обратно, теперь в ней на 1 сторону меньше
-            let cleanedResult = `${battle.dateTime} ${playerWinStatus} ` + parts.join(" vs ") + ` ${battle.battleResult.match(/https?:\/\/\S+/)[0]}`;
+            // Если осталась только одна сторона, убираем лишний " vs "
+            let cleanedResult = `${battle.dateTime} ${playerWinStatus} ` +
+                (parts.length > 1 ? parts.join(" vs ") : parts[0]) +
+                ` ${battle.battleResult.match(/https?:\/\/\S+/)[0]}`;
 
             console.log("После обработки:", cleanedResult); // Отладка
             return { ...battle, battleResult: cleanedResult };
