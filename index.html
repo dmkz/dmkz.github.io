@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-001</h2>
+    <h2>Парсер боёв v40-002</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -204,11 +204,9 @@ function copyResult() {
 }
 
 function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
-    // Очищаем HTML от лишних тегов
     html = cleanSpecialSymbols(html);
-    html = html.replace(/&nbsp;/g, ' '); // Удаляем неразрывные пробелы
+    html = html.replace(/&nbsp;/g, ' ');
 
-    // Регулярное выражение для поиска боёв
     let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*(.*?)<!--\d+-->/gs)];
     
     let battles = [];
@@ -222,56 +220,46 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         let secretCode = match[2] || "";
         let [day, month, year, time] = match[3].split(/[- ]/);
         let formattedDateTime = `${year}-${month}-${day} ${time}`;
-        let participantsRaw = match[4].trim(); // Все стороны боя
+        let participantsRaw = match[4].trim();
 
-        // Разделяем стороны по "vs"
         let sides = participantsRaw.split(/\s+vs\s+/g);
         let sidesParsed = sides.map(side => extractPlayerNames(side));
-        
-        // Определяем победителей (если есть <b>)
         let sidesStatus = sides.map(side => side.includes("<b>") ? "[win]" : "[lose]");
-        
-        // Формируем ссылку на бой
+
         let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
         let battleLink = `https://${baseDomain}/warlog.php?warid=${warId}`;
         if (secretCode) battleLink += `&show=${secretCode}`;
         if (watchFromStart) battleLink += "&lt";
 
-        // Определяем имя игрока без уровня
         let playerBaseName = playerName.replace(/\[\d+(-\d+)?\]/, "").trim();
-
-        // Определяем, в какой стороне находится игрок
         let playerSideIndex = sidesParsed.findIndex(side =>
             side.some(name => name.replace(/\[\d+(-\d+)?\]/, "").trim() === playerBaseName)
         );
 
-        // Определяем результат боя (по умолчанию поражение)
         let playerResult = "[lose]";
         if (playerSideIndex !== -1 && sidesStatus[playerSideIndex] === "[win]") {
             playerResult = "[win]";
         }
 
-        // 🛠 Если удаляем никнейм, убираем всю сторону игрока
+        // ✅ Удаляем всю сторону, содержащую игрока, если чекбокс removeMostCommon включен
         if (removeMostCommon && playerSideIndex !== -1) {
-            sidesParsed.splice(playerSideIndex, 1); // Удаляем всю сторону игрока
-            sidesStatus.splice(playerSideIndex, 1); // Удаляем её статус
+            sidesParsed.splice(playerSideIndex, 1);
+            sidesStatus.splice(playerSideIndex, 1);
         }
 
-        // 🛠 Удаляем статусы [win] и [lose] у остальных участников ТОЛЬКО если чекбокс removeMostCommon ВКЛЮЧЕН
+        // ✅ Убираем статусы [win] и [lose] у остальных игроков, если removeMostCommon включен
         if (removeMostCommon) {
             sidesParsed = sidesParsed.map(players =>
                 players.map(name => name.replace(/\s*\[win\]|\s*\[lose\]/g, ""))
             );
         }
 
-        // 🛠 Формируем строку с боем:
+        // ✅ Формируем итоговую строку с результатом
         let battleResult;
         if (removeMostCommon) {
-            // Если никнейм удаляем, добавляем [win] или [lose] после даты
-            battleResult = formattedDateTime + " " + playerResult + " " + 
+            battleResult = `${formattedDateTime} ${playerResult} ` + 
                 sidesParsed.map(players => players.join(", ")).join(" vs ") + ` ${battleLink}`;
         } else {
-            // Если никнейм оставляем, результат в бою у игрока остаётся
             battleResult = formattedDateTime + " " +
                 sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
         }
@@ -293,7 +281,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         battles = battles.map(battle => battle.battleResult);
     }
     
-    return battles.join("\n"); // Переносы строк остаются
+    return battles.join("\n");
 }
 
 function extractPlayerNames(text) {
