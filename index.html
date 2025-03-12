@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-023: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-024: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -214,6 +214,8 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     let battles = [];
     let useLordswm = document.getElementById('useLordswm').checked;
     let removeDate = document.getElementById("removeDate").checked;
+    let removeMostCommon = document.getElementById("removeMostCommon").checked;
+    let playerName = getPlayerName(html);
     
     for (let match of battleMatches) {
         let warId = match[1];
@@ -236,7 +238,22 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         if (watchFromStart) battleLink += "&lt";
 
         // Составляем строку с боем
-        let battleResult = `${formattedDateTime} ` + sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
+        // Определяем, в какой стороне находится игрок
+        let playerSideIndex = sidesParsed.findIndex(side =>
+            side.some(name => name.includes(playerName))
+        );
+
+        let playerResult = (playerSideIndex !== -1 && sidesStatus[playerSideIndex] === "[win]") ? "[win]" : "[lose]";
+
+        // Если включена опция "Удалить никнейм", убираем сторону игрока
+        if (removeMostCommon && playerSideIndex !== -1) {
+            sidesParsed.splice(playerSideIndex, 1);
+            sidesStatus.splice(playerSideIndex, 1);
+        }
+
+        // Формируем строку с боем
+        let battleResult = `${formattedDateTime} ${playerResult} ` + 
+            sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
 
         battles.push({ dateTime: formattedDateTime, battleResult });
     }
