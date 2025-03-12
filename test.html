@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-025</h2>
+    <h2>Парсер боёв v40-026</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -234,53 +234,45 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     if (removeMostCommon && mostCommonPlayer) {
         console.log("Обрабатываем ник:", mostCommonPlayer); // Отладка
 
-        // Экранируем никнейм для корректного поиска в регулярке
-        let escapedPlayer = mostCommonPlayer.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        // Убираем уровень из ника для поиска
+        let playerNameWithoutLevel = mostCommonPlayer.replace(/\[\d+\]$/, '');
+        let escapedPlayer = playerNameWithoutLevel.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 
         battles = battles.map(battle => {
             console.log("До обработки:", battle.battleResult);
 
-            // Разбираем строку по формату "Дата Ник[Уровень] [win/lose] vs Другой_игрок[Уровень] [win/lose] https://..."
             let match = battle.battleResult.match(/^(\d{2}-\d{2}-\d{2} \d{2}:\d{2}) (.+)$/);
             if (!match) return battle; // Если формат сломан, пропускаем
 
             let [, dateTime, resultPart] = match;
-
-            // Разделяем стороны
             let parts = resultPart.split(" vs ");
             let newParts = [];
             let playerResult = null;
             let battleLink = "";
 
             parts.forEach(side => {
-                // Отделяем ссылку
                 let linkMatch = side.match(/https?:\/\/\S+/);
                 if (linkMatch) battleLink = linkMatch[0];
 
-                // Убираем ссылку из строки, чтобы не мешала анализу
                 let sideWithoutLink = side.replace(/https?:\/\/\S+/, '').trim();
 
-                // Проверяем, есть ли наш игрок в этой стороне
-                let playerRegex = new RegExp(`\\b${escapedPlayer}\\[\\d+\\]\\b`, "gi");
+                // Улучшенное регулярное выражение для поиска ника с уровнем
+                let playerRegex = new RegExp(`\\b${escapedPlayer}\\s*\\[\\d+\\]\\b`, "gi");
                 if (playerRegex.test(sideWithoutLink)) {
-                    // Определяем, победила эта сторона или нет
                     playerResult = side.includes("[win]") ? "[win]" : "[lose]";
                     newParts.push("This_Is_Our_Side");
                 } else {
-                    // Удаляем [win] или [lose] из остальных сторон
                     newParts.push(sideWithoutLink.replace(/\s*\[win\]|\s*\[lose\]/gi, ''));
                 }
             });
 
-            // Если игрока не было найдено, оставляем строку без изменений
             if (playerResult === null) {
+                console.log("Игрок не найден в этой строке!");
                 return battle;
             }
 
-            // Формируем новую строку
             let cleanedResult = `${dateTime} ${playerResult} ${newParts.join(" vs ")} ${battleLink}`.trim();
-
-            console.log("После обработки:", cleanedResult); // Отладка
+            console.log("После обработки:", cleanedResult);
             return { ...battle, battleResult: cleanedResult };
         });
     }
