@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-009: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-010: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -232,7 +232,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
         return `${battleIndex ? battleIndex + ". " : ""}${battle.dateTime} ${battle.leftParticipants.join(", ")} ${battle.leftStatus} vs ${battle.rightParticipants.join(", ")} ${battle.rightStatus} ${battle.battleLink}`;
     });
 
-    return numberedResults.join("\n").replace(/\s+/g, " "); // Убираем лишние пробелы
+    return numberedResults.join("\n"); // ВОТ ЭТО было исправлено - теперь сохраняются переносы строк
 }
 
 /**
@@ -272,6 +272,7 @@ function decodeHTMLEntities(text) {
     let doc = new DOMParser().parseFromString(text, "text/html");
     return doc.documentElement.textContent;
 }
+
 
 
 
