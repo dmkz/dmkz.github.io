@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-020</h2>
+    <h2>Парсер боёв v40-021</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -241,8 +241,14 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         battles = battles.map(battle => {
             console.log("До обработки:", battle.battleResult);
 
+            // Разделяем дату и результат боя
+            let match = battle.battleResult.match(/^(\d{2}-\d{2}-\d{2} \d{2}:\d{2}) (.+)$/);
+            if (!match) return battle; // Если формат сломан, пропускаем
+
+            let [, dateTime, resultPart] = match;
+
             // Разделяем стороны
-            let parts = battle.battleResult.split(" vs ");
+            let parts = resultPart.split(" vs ");
             let playerSideIndex = -1;
             let playerWinStatus = "";
 
@@ -267,11 +273,9 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             let battleLinks = [...new Set(battle.battleResult.match(/https?:\/\/\S+/g) || [])];
             let battleLink = battleLinks.length > 0 ? battleLinks[0] : "";
 
-            // Убираем пустые стороны
-            parts = parts.filter(side => side.trim().length > 0);
-
-            // **Формируем корректный результат без дубликатов даты и ссылок**
-            let cleanedResult = `${battle.dateTime} ${playerWinStatus} ${parts.join(" vs ")} ${battleLink}`.trim();
+            // Убираем пустые стороны и лишний "vs"
+            let cleanedSides = parts.filter(side => side.length > 0);
+            let cleanedResult = `${dateTime} ${playerWinStatus} ${cleanedSides.join(" vs ")} ${battleLink}`.trim();
 
             console.log("После обработки:", cleanedResult); // Отладка
             return { ...battle, battleResult: cleanedResult };
