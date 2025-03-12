@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-022</h2>
+    <h2>Парсер боёв v40-023</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -248,6 +248,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             // Разделяем стороны
             let parts = resultPart.split(" vs ");
             let newParts = [];
+            let playerResult = null;
             let battleLink = "";
 
             parts.forEach(side => {
@@ -256,14 +257,23 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
                 let linkMatch = side.match(/https?:\/\/\S+/);
                 if (linkMatch) battleLink = linkMatch[0];
 
-                // Если в стороне есть удаляемый ник, не добавляем её
-                if (!new RegExp(`\\b${escapedPlayer}(\\s*\\[\\d+\\])?\\b`, "gi").test(sideWithoutLink)) {
-                    newParts.push(sideWithoutLink);
+                // Определяем, победила ли сторона игрока
+                if (new RegExp(`\\b${escapedPlayer}(\\s*\\[\\d+\\])?\\b`, "gi").test(sideWithoutLink)) {
+                    playerResult = side.includes("[win]") ? "[win]" : "[lose]";
+                } else {
+                    // Убираем метки [win] и [lose] у остальных сторон
+                    let cleanSide = sideWithoutLink.replace(/\s*\[win\]|\s*\[lose\]/g, '');
+                    newParts.push(cleanSide);
                 }
             });
 
-            // Если осталось только одно имя, убираем "vs"
-            let cleanedResult = `${dateTime} ${newParts.join(" vs ")} ${battleLink}`.trim();
+            // Если игрока не было найдено, оставляем строку без изменений
+            if (playerResult === null) {
+                return battle;
+            }
+
+            // Формируем новую строку
+            let cleanedResult = `${dateTime} ${playerResult} ${newParts.join(" vs ")} ${battleLink}`.trim();
 
             console.log("После обработки:", cleanedResult); // Отладка
             return { ...battle, battleResult: cleanedResult };
