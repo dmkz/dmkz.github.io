@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-027</h2>
+    <h2>Парсер боёв v40-028</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -232,13 +232,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     console.log("mostCommonPlayer", mostCommonPlayer);
     
     if (removeMostCommon && mostCommonPlayer) {
-        console.log("Обрабатываем ник:", mostCommonPlayer); // Отладка
-
-        // Разбираем никнейм и экранируем специальные символы
-        let escapedPlayer = mostCommonPlayer.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-
-        // Формируем регулярное выражение, которое ищет ник вместе с уровнем
-        let playerRegex = new RegExp(`${escapedPlayer}\\s*\\[\\d+\\]`, "i");
+        console.log("Обрабатываем ник:", mostCommonPlayer);
 
         battles = battles.map(battle => {
             console.log("До обработки:", battle.battleResult);
@@ -252,20 +246,21 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             let playerResult = null;
             let battleLink = "";
 
-            parts.forEach(side => {
+            for (let side of parts) {
                 let linkMatch = side.match(/https?:\/\/\S+/);
                 if (linkMatch) battleLink = linkMatch[0];
 
                 let sideWithoutLink = side.replace(/https?:\/\/\S+/, '').trim();
 
-                // Ищем сторону, где находится игрок
-                if (playerRegex.test(sideWithoutLink)) {
+                // Проверяем, есть ли ник в этой стороне (без регулярок)
+                if (sideWithoutLink.includes(mostCommonPlayer)) {
+                    console.log(`Игрок найден в стороне: ${sideWithoutLink}`);
                     playerResult = side.includes("[win]") ? "[win]" : "[lose]";
                     newParts.push("This_Is_Our_Side");
                 } else {
                     newParts.push(sideWithoutLink.replace(/\s*\[win\]|\s*\[lose\]/gi, ''));
                 }
-            });
+            }
 
             if (playerResult === null) {
                 console.log("Игрок не найден в этой строке:", battle.battleResult);
