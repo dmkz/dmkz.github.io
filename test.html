@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-010</h2>
+    <h2>Парсер боёв v40-012</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -233,7 +233,9 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     
     // Если включена опция удаления никнейма — убираем его из всех боёв
     if (removeMostCommon && mostCommonPlayer) {
-        // Экранируем специальные символы в нике, если есть
+        console.log("Удаляем ник:", mostCommonPlayer); // Проверяем, какой ник удаляем
+
+        // Правильное экранирование никнейма
         let escapedPlayer = mostCommonPlayer.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 
         // Регулярное выражение для удаления ника + возможного уровня [число]
@@ -241,13 +243,15 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
         battles = battles.map(battle => {
             let cleanedResult = battle.battleResult
-                .replace(regex, "") // Убираем ник с возможным уровнем
-                .replace(/\s+,/g, ",") // Убираем лишние запятые
-                .replace(/,\s+vs/g, " vs") // Убираем запятые перед "vs"
-                .replace(/\s+vs\s+/g, " vs ") // Корректируем пробелы вокруг "vs"
-                .replace(/\s{2,}/g, " ") // Убираем двойные пробелы
+                .replace(regex, "")  // Убираем ник с возможным уровнем
+                .replace(/\s+,/g, ",")  // Убираем запятые перед vs
+                .replace(/,\s+vs/g, " vs")  // Убираем лишнюю запятую перед "vs"
+                .replace(/\s+vs\s+/g, " vs ")  // Корректируем пробелы вокруг "vs"
+                .replace(/\s{2,}/g, " ")  // Убираем двойные пробелы
                 .trim(); // Очищаем пробелы в начале/конце строки
 
+            console.log("До удаления:", battle.battleResult); // Отладка
+            console.log("После удаления:", cleanedResult); // Отладка
             return { ...battle, battleResult: cleanedResult };
         });
     }
