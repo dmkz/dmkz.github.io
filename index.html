@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-026: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-027: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -238,9 +238,9 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         if (watchFromStart) battleLink += "&lt";
 
         // Составляем строку с боем
-        // Определяем, в какой стороне находится игрок
+        // Определяем, в какой стороне находится игрок (учитываем возможный диапазон уровней)
         let playerSideIndex = sidesParsed.findIndex(side =>
-            side.some(name => name.includes(playerName))
+            side.some(name => name.startsWith(playerName.split('[')[0])) // Сравниваем только ник, без уровней
         );
 
         // Определяем, выиграл ли игрок
@@ -250,7 +250,11 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         if (removeMostCommon && playerSideIndex !== -1) {
             sidesParsed.splice(playerSideIndex, 1); // Удаляем сторону игрока
             sidesStatus.splice(playerSideIndex, 1); // Удаляем статус победы/поражения этой стороны
-            formattedDateTime = `${formattedDateTime} ${playerResult}`; // Переносим win/lose после даты
+        }
+
+        // Добавляем победу/поражение после даты
+        if (removeMostCommon) {
+            formattedDateTime = `${formattedDateTime} ${playerResult}`;
         }
 
         // Формируем строку с боем
