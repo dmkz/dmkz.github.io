@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-006</h2>
+    <h2>Парсер боёв v40-007</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -148,42 +148,35 @@
     
     <script>
 function getPlayerName(htmlContent) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlContent, "text/html");
+    const battleMatches = [...htmlContent.matchAll(/<a class=pi href="pl_info\.php\?id=\d+">([^<]+)\[?\d*\]?<\/a>/g)];
 
-    let playerName = "";
+    let playerCounts = {};
+    
+    // Подсчитываем сколько раз встречается каждый ник
+    for (let match of battleMatches) {
+        let playerName = match[1].trim();
+        if (!playerCounts[playerName]) {
+            playerCounts[playerName] = 0;
+        }
+        playerCounts[playerName]++;
+    }
 
-    // Основной поиск в заголовке страницы
-    const header = doc.querySelector(".global_container_block_header");
-    if (header) {
-        const match = header.innerHTML.match(/Протокол боев\s*<a[^>]+><b>([^<]+)<\/b><\/a>/i);
-        if (match) {
-            playerName = match[1].trim();
+    // Определяем самого частого игрока
+    let maxCount = 0;
+    let mostCommonPlayer = "";
+    for (let player in playerCounts) {
+        if (playerCounts[player] > maxCount) {
+            maxCount = playerCounts[player];
+            mostCommonPlayer = player;
         }
     }
 
-    // Альтернативный поиск по боевым записям, если заголовок не найден
-    if (!playerName) {
-        const playerMatch = htmlContent.match(/<a[^>]+href=['"]pl_info\.php\?id=\d+['"][^>]*><font[^>]*>([^<]+)<\/font><\/a>/i);
-        if (playerMatch) {
-            playerName = playerMatch[1].trim();
-        }
-    }
-
-    if (!playerName) {
+    if (!mostCommonPlayer) {
         console.error("❌ Не удалось определить ник игрока.");
         return "Результат";
     }
 
-    // Ищем уровни игрока в боевых записях
-    const levelMatches = [...htmlContent.matchAll(new RegExp(`${playerName}\\[(\\d+)\\]`, "g"))];
-    const levels = [...new Set(levelMatches.map(m => parseInt(m[1], 10)))].sort((a, b) => a - b);
-
-    if (levels.length > 0) {
-        playerName += levels.length === 1 ? `[${levels[0]}]` : `[${levels[0]}-${levels[levels.length - 1]}]`;
-    }
-
-    return playerName;
+    return mostCommonPlayer;
 }
 
 function clearInput() {
