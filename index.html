@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-008: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-009: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -172,11 +172,12 @@ function copyResult() {
 }
 
 function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNumbering, startNumber) {
-    // Удаляем HTML-теги, содержащие только специальные символы (например, &tau;)
+    // Очищаем HTML от лишних тегов
     html = cleanSpecialSymbols(html);
+    html = html.replace(/&nbsp;/g, ' '); // Удаляем неразрывные пробелы
 
-    // Регулярное выражение для поиска боев
-    let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?.*?<\/a>: (.*?) vs (.*?)<BR>/gs)];
+    // Регулярное выражение для поиска боёв
+    let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*(.*?)\s+vs\s+(.*?)<BR>/gs)];
 
     let battles = [];
     let useLordswm = document.getElementById('useLordswm').checked;
@@ -184,48 +185,30 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
     for (let match of battleMatches) {
         let warId = match[1]; // ID боя
         let secretCode = match[2] || ""; // Секретный код (если есть)
-        let battleBlock = match[0];
+        let dateTime = match[3]; // Дата и время боя
+        let leftSideRaw = match[4].trim(); // Левая сторона боя
+        let rightSideRaw = match[5].trim(); // Правая сторона боя
 
-        // Извлекаем дату и время
-        let dateMatch = battleBlock.match(/(\d{2}-\d{2}-\d{2} \d{2}:\d{2})/);
-        let dateTime = dateMatch ? dateMatch[1] : "Дата неизвестна";
-
-        // Удаляем ненужные HTML-элементы (например, &tau;)
-        let cleanedBattleBlock = battleBlock.replace(/<b>\s*&[^;]+;\s*<\/b>/g, "");
-
-        // Извлекаем левую и правую стороны боя
-        let leftSideRaw = match[3].trim();
-        let rightSideRaw = match[4].trim();
-
-        // Определяем, какая сторона победила
+        // Определяем победителя
         let leftIsWinner = /<b>.*?<\/b>/.test(leftSideRaw);
         let rightIsWinner = /<b>.*?<\/b>/.test(rightSideRaw);
 
-        // **Обрабатываем левую сторону**
+        // Извлекаем имена
         let leftParticipants = extractPlayerNames(leftSideRaw);
-
-        // **Обрабатываем правую сторону**
         let rightParticipants = extractPlayerNames(rightSideRaw, true);
 
-        // Добавляем статус победы/поражения
+        // Добавляем метки победы/поражения
         let leftStatus = leftIsWinner ? "[win]" : "[lose]";
         let rightStatus = rightIsWinner ? "[win]" : "[lose]";
 
         // Формируем ссылку на бой
         let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
         let battleLink = `https://${baseDomain}/warlog.php?warid=${warId}`;
-        if (secretCode) {
-            battleLink += `&show=${secretCode}`;
-        }
-        if (watchFromStart) {
-            battleLink += "&lt";
-        }
+        if (secretCode) battleLink += `&show=${secretCode}`;
+        if (watchFromStart) battleLink += "&lt";
 
         battles.push({ warId, dateTime, leftParticipants, leftStatus, rightParticipants, rightStatus, battleLink });
     }
-
-    // Сортировка по дате
-    battles.sort((a, b) => a.dateTime.localeCompare(b.dateTime));
 
     // Фильтрация по запрещенным боям (если включена)
     if (doFilter) {
@@ -246,7 +229,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart, useNu
     let battleNumber = startNumber;
     let numberedResults = battles.map(battle => {
         let battleIndex = useNumbering ? (battle.leftStatus === "[win]" || battle.rightStatus === "[win]" ? battleNumber++ : "-") : "";
-        return `${battleIndex ? battleIndex + ". " : ""}${dateTime} ${battle.leftParticipants.join(", ")} ${battle.leftStatus} vs ${battle.rightParticipants.join(", ")} ${battle.rightStatus} ${battle.battleLink}`;
+        return `${battleIndex ? battleIndex + ". " : ""}${battle.dateTime} ${battle.leftParticipants.join(", ")} ${battle.leftStatus} vs ${battle.rightParticipants.join(", ")} ${battle.rightStatus} ${battle.battleLink}`;
     });
 
     return numberedResults.join("\n").replace(/\s+/g, " "); // Убираем лишние пробелы
@@ -289,6 +272,7 @@ function decodeHTMLEntities(text) {
     let doc = new DOMParser().parseFromString(text, "text/html");
     return doc.documentElement.textContent;
 }
+
 
 
 
