@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-005: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-006: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -252,14 +252,16 @@ function cleanSpecialSymbols(html) {
 }
 
 /**
- * Функция извлечения имен игроков, учитывая запятые и HTML-код
+ * Функция извлечения имен игроков, учитывая HTML-теги (`<b>`, `<font>`, `<i>` и т.д.)
  */
 function extractPlayerNames(text) {
-    let playerRegex = /<a[^>]*>(.*?)<\/a>/g;
+    let cleanedText = text.replace(/<[^>]+>/g, ' '); // Удаляем все HTML-теги, оставляя только текст
     let names = [];
+
+    let playerRegex = /(?:^|\s)([^\s,]+(?:\[\d+\])?)(?=\s|,|$)/g; // Ищем имена с уровнем (например, "Игрок1[17]")
     let match;
 
-    while ((match = playerRegex.exec(text)) !== null) {
+    while ((match = playerRegex.exec(cleanedText)) !== null) {
         let cleanedName = decodeHTMLEntities(match[1].trim()); // Декодируем HTML
         names.push(cleanedName);
     }
@@ -274,6 +276,7 @@ function decodeHTMLEntities(text) {
     let doc = new DOMParser().parseFromString(text, "text/html");
     return doc.documentElement.textContent;
 }
+
 
   
 /*function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
