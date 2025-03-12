@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v39-028: в процессе исправления ошибок, не работает</h2>
+    <h2>Парсер боёв v39-029: в процессе исправления ошибок, не работает</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -239,6 +239,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
         // Составляем строку с боем
         // Определяем имя игрока без уровня
+        // Определяем имя игрока без уровня (без [17])
         let playerBaseName = playerName.replace(/\[\d+(-\d+)?\]/, "").trim();
 
         // Определяем, в какой стороне находится игрок
@@ -246,20 +247,24 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             side.some(name => name.replace(/\[\d+(-\d+)?\]/, "").trim() === playerBaseName)
         );
 
-        // Если игрок найден, определяем результат боя
-        let playerResult = "[lose]"; // По умолчанию считаем, что проиграл
-
-        if (playerSideIndex !== -1) {
-            if (sidesStatus[playerSideIndex] === "[win]") {
-                playerResult = "[win]";
-            }
+        // Определяем результат боя (по умолчанию поражение)
+        let playerResult = "[lose]";
+        if (playerSideIndex !== -1 && sidesStatus[playerSideIndex] === "[win]") {
+            playerResult = "[win]";
         }
 
-        // Если включена опция "Удалить никнейм", удаляем сторону игрока
+        // 🛠 Исправленный код удаления игрока
         if (removeMostCommon && playerSideIndex !== -1) {
-            sidesParsed.splice(playerSideIndex, 1); // Удаляем сторону игрока
-            sidesStatus.splice(playerSideIndex, 1); // Удаляем статус победы/поражения этой стороны
-            formattedDateTime = `${formattedDateTime} ${playerResult}`; // Добавляем статус боя после даты
+            // Удаляем только имя игрока из стороны, а не всю сторону
+            sidesParsed[playerSideIndex] = sidesParsed[playerSideIndex].filter(name =>
+                name.replace(/\[\d+(-\d+)?\]/, "").trim() !== playerBaseName
+            );
+
+            // Если после удаления игрока команда пустая – удаляем всю сторону
+            if (sidesParsed[playerSideIndex].length === 0) {
+                sidesParsed.splice(playerSideIndex, 1);
+                sidesStatus.splice(playerSideIndex, 1);
+            }
         }
 
         // Формируем строку с боем
