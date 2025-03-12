@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-024</h2>
+    <h2>Парсер боёв v40-025</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -234,6 +234,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     if (removeMostCommon && mostCommonPlayer) {
         console.log("Обрабатываем ник:", mostCommonPlayer); // Отладка
 
+        // Экранируем никнейм для корректного поиска в регулярке
         let escapedPlayer = mostCommonPlayer.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 
         battles = battles.map(battle => {
@@ -253,17 +254,21 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
             parts.forEach(side => {
                 // Отделяем ссылку
-                let sideWithoutLink = side.replace(/https?:\/\/\S+/, '').trim();
                 let linkMatch = side.match(/https?:\/\/\S+/);
                 if (linkMatch) battleLink = linkMatch[0];
 
-                // Проверяем, находится ли игрок в этой стороне
-                if (new RegExp(`\\b${escapedPlayer}(\\s*\\[\\d+\\])?\\b`, "gi").test(sideWithoutLink)) {
+                // Убираем ссылку из строки, чтобы не мешала анализу
+                let sideWithoutLink = side.replace(/https?:\/\/\S+/, '').trim();
+
+                // Проверяем, есть ли наш игрок в этой стороне
+                let playerRegex = new RegExp(`\\b${escapedPlayer}\\[\\d+\\]\\b`, "gi");
+                if (playerRegex.test(sideWithoutLink)) {
                     // Определяем, победила эта сторона или нет
                     playerResult = side.includes("[win]") ? "[win]" : "[lose]";
                     newParts.push("This_Is_Our_Side");
                 } else {
-                    newParts.push(sideWithoutLink);
+                    // Удаляем [win] или [lose] из остальных сторон
+                    newParts.push(sideWithoutLink.replace(/\s*\[win\]|\s*\[lose\]/gi, ''));
                 }
             });
 
