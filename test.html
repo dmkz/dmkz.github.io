@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-013</h2>
+    <h2>Парсер боёв v40-014</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -231,27 +231,42 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     document.getElementById("resultTitle").textContent = mostCommonPlayer;
     console.log("mostCommonPlayer", mostCommonPlayer);
     
-    // Если включена опция удаления никнейма — убираем его из всех боёв
+    // Если включена опция удаления никнейма — удаляем всю сторону, где он был
     if (removeMostCommon && mostCommonPlayer) {
-        console.log("Удаляем ник:", mostCommonPlayer); // Проверяем, какой ник удаляем
+        console.log("Удаляем ник и его сторону:", mostCommonPlayer); // Проверяем, кого удаляем
 
-        // Экранируем спецсимволы, включая []
+        // Экранируем спецсимволы в нике
         let escapedPlayer = mostCommonPlayer.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 
-        // Новый RegExp БЕЗ \b, чтобы он работал с цифрами и скобками
-        let regex = new RegExp(`${escapedPlayer}`, "gi");
-
         battles = battles.map(battle => {
-            let cleanedResult = battle.battleResult
-                .replace(regex, "")  // Убираем ник
-                .replace(/\s+,/g, ",")  // Убираем запятые перед vs
-                .replace(/,\s+vs/g, " vs")  // Убираем лишнюю запятую перед "vs"
-                .replace(/\s+vs\s+/g, " vs ")  // Корректируем пробелы вокруг "vs"
-                .replace(/\s{2,}/g, " ")  // Убираем двойные пробелы
-                .trim(); // Очищаем пробелы в начале/конце строки
+            console.log("До обработки:", battle.battleResult);
 
-            console.log("До удаления:", battle.battleResult); // Отладка
-            console.log("После удаления:", cleanedResult); // Отладка
+            // Разделяем стороны
+            let parts = battle.battleResult.split(" vs ");
+            let playerSideIndex = -1;
+            let playerWinStatus = "";
+
+            // Определяем, в какой стороне находился игрок
+            for (let i = 0; i < parts.length; i++) {
+                if (new RegExp(`${escapedPlayer}(\\s*\\[\\d+\\])?`, "gi").test(parts[i])) {
+                    playerSideIndex = i;
+                    playerWinStatus = parts[i].includes("[win]") ? "[win]" : "[lose]";
+                    break;
+                }
+            }
+
+            // Если игрок найден, удаляем его сторону
+            if (playerSideIndex !== -1) {
+                parts.splice(playerSideIndex, 1);
+            }
+
+            // Убираем все "[win]" и "[lose]" у сторон
+            parts = parts.map(side => side.replace(/\s*\[win\]|\s*\[lose\]/g, "").trim());
+
+            // Собираем строку обратно, теперь в ней на 1 сторону меньше
+            let cleanedResult = `${battle.dateTime} ${playerWinStatus} ` + parts.join(" vs ") + ` ${battle.battleResult.match(/https?:\/\/\S+/)[0]}`;
+
+            console.log("После обработки:", cleanedResult); // Отладка
             return { ...battle, battleResult: cleanedResult };
         });
     }
