@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-029</h2>
+    <h2>Парсер боёв v40-030</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -234,13 +234,23 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     if (removeMostCommon && mostCommonPlayer) {
         console.log("Обрабатываем ник:", mostCommonPlayer);
 
+        // Убираем уровень из ника игрока
+        let playerNameOnly = "";
+        for (let i = 0; i < mostCommonPlayer.length; i++) {
+            if (mostCommonPlayer[i] === "[") break; // Останавливаемся перед уровнем
+            playerNameOnly += mostCommonPlayer[i];
+        }
+        console.log("Имя игрока без уровня:", playerNameOnly);
+
         battles = battles.map(battle => {
             console.log("До обработки:", battle.battleResult);
 
-            let match = battle.battleResult.match(/^(\d{2}-\d{2}-\d{2} \d{2}:\d{2}) (.+)$/);
-            if (!match) return battle; // Если формат сломан, пропускаем
+            let battleParts = battle.battleResult.split(" ");
+            if (battleParts.length < 3) return battle; // Если формат сломан, пропускаем
 
-            let [, dateTime, resultPart] = match;
+            let dateTime = battleParts.slice(0, 2).join(" "); // Дата и время
+            let resultPart = battleParts.slice(2).join(" "); // Остальная часть строки
+
             let parts = resultPart.split(" vs ");
             let playerResult = null;
             let battleLink = "";
@@ -248,23 +258,38 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
             // Ищем сторону игрока
             for (let i = 0; i < parts.length; i++) {
-                let side = parts[i];
+                let side = parts[i].trim();
 
-                // Отделяем ссылку
-                let linkMatch = side.match(/https?:\/\/\S+/);
-                if (linkMatch) battleLink = linkMatch[0];
+                // Проверяем, содержит ли сторона ссылку
+                let linkStart = side.indexOf("http");
+                if (linkStart !== -1) {
+                    battleLink = side.slice(linkStart);
+                    side = side.slice(0, linkStart).trim();
+                }
 
-                let sideWithoutLink = side.replace(/https?:\/\/\S+/, '').trim();
+                // Проверяем, есть ли наш игрок в этой стороне (с любым уровнем)
+                let found = false;
+                for (let j = 0; j < side.length - playerNameOnly.length; j++) {
+                    if (side.slice(j, j + playerNameOnly.length) === playerNameOnly) {
+                        let nextChar = side[j + playerNameOnly.length];
+                        if (nextChar === "[") { // Проверяем, есть ли уровень после ника
+                            found = true;
+                            break;
+                        }
+                    }
+                }
 
-                // Если наш игрок в этой стороне, запоминаем win/lose и не добавляем её
-                if (sideWithoutLink.includes(mostCommonPlayer)) {
-                    console.log(`Игрок найден в стороне: ${sideWithoutLink}`);
+                if (found) {
+                    console.log(`Игрок найден в стороне: ${side}`);
+
+                    // Запоминаем win/lose, но убираем игрока
                     playerResult = side.includes("[win]") ? "[win]" : "[lose]";
                     continue; // Пропускаем добавление этой стороны
                 }
 
                 // Убираем win/lose у других сторон
-                newParts.push(sideWithoutLink.replace(/\s*\[win\]|\s*\[lose\]/gi, ''));
+                let cleanSide = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
+                newParts.push(cleanSide);
             }
 
             if (playerResult === null) {
@@ -273,7 +298,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             }
 
             // Собираем строку заново: дата + win/lose + оставшиеся стороны + ссылка
-            let cleanedResult = `${dateTime} ${playerResult} ${newParts.join(" vs ")} ${battleLink}`.replace(/\s+/g, ' ').trim();
+            let cleanedResult = `${dateTime} ${playerResult} ${newParts.join(" vs ")} ${battleLink}`.trim();
             console.log("После обработки:", cleanedResult);
             return { ...battle, battleResult: cleanedResult };
         });
