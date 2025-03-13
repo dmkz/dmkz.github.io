@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v41-017</h2>
+    <h2>Парсер боёв v41-018</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -335,28 +335,37 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     let startNumber = parseInt(document.getElementById("startNumber").value, 10) || 1;
 
     if (numberBattles) {
-        let winCount = startNumber; // Начальный номер
-        let maxWidth = (winCount + battles.length).toString().length; // Определяем длину номера
-        let foundNumbering = false; // Флаг проверки, что номера добавлены
+        let winCount = startNumber; // Начинаем нумерацию с указанного значения
+        let maxWidth = (winCount + battles.length).toString().length; // Длина номера
+        let foundNumbering = false; // Проверяем, что номера добавились
 
+        // 1️⃣ Сортируем бои по дате (от старых к новым)
+        battles.sort((a, b) => a.dateTime.localeCompare(b.dateTime));
+
+        // 2️⃣ Пронумеруем все бои
         for (let i = 0; i < battles.length; i++) {
             if (battles[i].battleResult.includes("[win]")) {
                 let formattedNumber = winCount.toString().padStart(maxWidth, "0");
                 battles[i].battleResult = `(${formattedNumber}) ` + battles[i].battleResult;
                 winCount++;
-                foundNumbering = true; // Отмечаем, что номер был добавлен
+                foundNumbering = true;
             } else if (battles[i].battleResult.includes("[lose]")) {
                 let minusString = "-".repeat(maxWidth);
                 battles[i].battleResult = `(${minusString}) ` + battles[i].battleResult;
-                foundNumbering = true; // Отмечаем, что номер был добавлен
+                foundNumbering = true;
             }
         }
 
-        // Проверяем, что номера добавились
+        // 3️⃣ Проверка, что номера были добавлены
         if (!foundNumbering) {
             console.error("❌ Ошибка: номера не были добавлены!");
         } else {
             console.log("✅ Номера успешно добавлены.");
+        }
+
+        // 4️⃣ Если включен "Прямой порядок сортировки", оставляем порядок, иначе переворачиваем обратно
+        if (!sortAscending) {
+            battles.reverse();
         }
     }
 
