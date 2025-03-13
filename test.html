@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v41-010</h2>
+    <h2>Парсер боёв v41-011</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -335,22 +335,16 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     let startNumber = parseInt(document.getElementById("startNumber").value, 10) || 1;
 
     if (numberBattles) {
-        let winCount = startNumber - 1;
         let sortAscending = document.getElementById("sortAscending").checked;
+        let winBattles = battles.filter(b => b.battleResult.includes("[win]")); // Победы без замены
+        let winCount = sortAscending ? startNumber : startNumber + winBattles.length - 1; // Определяем начальный номер
+        let maxWidth = (startNumber + winBattles.length - 1).toString().length; // Определяем ширину
 
-        // Определяем ширину номеров
-        let winBattles = battles.filter(b => b.battleResult.includes("[win]")); // Теперь работает правильно
-        if (sortAscending) {
-            winBattles.reverse(); // Гарантируем хронологический порядок номеров
-        }
-        let maxWinNumber = startNumber + winBattles.length - 1;
-        let maxWidth = maxWinNumber.toString().length;
-
-        for (let battle of battles) {
+        for (let battle of (sortAscending ? battles : [...battles].reverse())) {
             if (battle.battleResult.includes("[win]")) {
-                winCount++;
                 let formattedNumber = winCount.toString().padStart(maxWidth, "0");
                 battle.battleResult = `(${formattedNumber}) ` + battle.battleResult;
+                winCount += sortAscending ? 1 : -1; // Инкрементируем или уменьшаем номер
             } else if (battle.battleResult.includes("[lose]")) {
                 let minusString = "-".repeat(maxWidth);
                 battle.battleResult = `(${minusString}) ` + battle.battleResult;
