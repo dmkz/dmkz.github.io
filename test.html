@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v41-012</h2>
+    <h2>Парсер боёв v41-013</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -336,35 +336,41 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
     if (numberBattles) {
         let sortAscending = document.getElementById("sortAscending").checked;
+        
+        // Отбираем все победы и сортируем их по дате (от старых к новым)
         let winBattles = battles.filter(b => b.battleResult.includes("[win!]"));
-
-        // Сортируем победы строго по времени (от старых к новым)
         winBattles.sort((a, b) => a.dateTime.localeCompare(b.dateTime));
 
-        let winCount = startNumber; // Начинаем с номера startNumber
+        let winCount = startNumber;
         let maxWinNumber = startNumber + winBattles.length - 1;
-        let maxWidth = maxWinNumber.toString().length; // Длина номера для форматирования
+        let maxWidth = maxWinNumber.toString().length;
 
-        // Проставляем номера только победам, следуя хронологии
+        // Проставляем номера только победам (по хронологии)
+        let battleMap = new Map();
         for (let battle of winBattles) {
             let formattedNumber = winCount.toString().padStart(maxWidth, "0");
-            battle.battleResult = `(${formattedNumber}) ` + battle.battleResult;
+            battleMap.set(battle.dateTime, `(${formattedNumber}) ` + battle.battleResult);
             winCount++;
         }
 
-        // Проставляем "---" для поражений
-        for (let battle of battles) {
+        // Применяем нумерацию обратно к списку battles
+        battles = battles.map(battle => {
+            if (battleMap.has(battle.dateTime)) {
+                return { ...battle, battleResult: battleMap.get(battle.dateTime) };
+            }
             if (battle.battleResult.includes("[lose]")) {
                 let minusString = "-".repeat(maxWidth);
-                battle.battleResult = `(${minusString}) ` + battle.battleResult;
+                return { ...battle, battleResult: `(${minusString}) ` + battle.battleResult };
             }
-        }
+            return battle;
+        });
 
-        // Если порядок сортировки обратный, переворачиваем battles после нумерации
+        // Если порядок обратный, переворачиваем список battles
         if (!sortAscending) {
             battles.reverse();
         }
     }
+
 
     // Удаление даты после нумерации
     if (removeDate) {
