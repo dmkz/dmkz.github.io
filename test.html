@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v41-002</h2>
+    <h2>Парсер боёв v41-003</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -329,20 +329,25 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         for (let i = battles.length - 1; i >= 0; i--) {
             let battle = battles[i];
 
-            if (battle.includes("[win]")) {
+            if (battle.battleResult.includes("[win]")) {
                 winCount++;
-                battles[i] = `(${winCount}) ` + battle;
-            } else if (battle.includes("[lose]")) {
-                battles[i] = `(-) ` + battle;
+                battles[i].battleResult = `(${winCount}) ` + battle.battleResult;
+            } else if (battle.battleResult.includes("[lose]")) {
+                battles[i].battleResult = `(-) ` + battle.battleResult;
             }
         }
     }
-    
+
+    // Удаление даты после нумерации
     if (removeDate) {
-        battles = battles.map(battle => battle.battleResult.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, ''));
-    } else {
-        battles = battles.map(battle => battle.battleResult);
+        battles = battles.map(battle => ({
+            ...battle,
+            battleResult: battle.battleResult.replace(/\(\d+\) \d{2}-\d{2}-\d{2} \d{2}:\d{2} /, match => match.replace(/\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, ''))
+        }));
     }
+
+    // Финальное преобразование в строку
+    battles = battles.map(battle => battle.battleResult);
     battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim()); // Убираем висячие запятые
     battles = battles.filter(battle => battle.trim().length > 0); // Убираем пустые строки
     return battles.join("\n");
