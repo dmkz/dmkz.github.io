@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v41-014</h2>
+    <h2>Парсер боёв v41-015</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -336,36 +336,35 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
     if (numberBattles) {
         let sortAscending = document.getElementById("sortAscending").checked;
-        
-        // Сортируем список по дате (по возрастанию)
+
+        // Копируем список и сортируем по дате (всегда от старых к новым)
         let sortedBattles = [...battles].sort((a, b) => a.dateTime.localeCompare(b.dateTime));
 
-        // Индексируем по дате для быстрого поиска
-        let indexMap = new Map(sortedBattles.map((battle, index) => [battle.dateTime, index]));
-
+        // Создаём счётчик побед
         let winCount = startNumber;
-        let maxWinNumber = startNumber + sortedBattles.filter(b => b.battleResult.includes("[win!]")).length - 1;
-        let maxWidth = maxWinNumber.toString().length;
+        let totalWins = sortedBattles.filter(b => b.battleResult.includes("[win!]")).length;
+        let maxWidth = (startNumber + totalWins - 1).toString().length;
 
-        // Проставляем номера всем победам по порядку
-        sortedBattles.forEach(battle => {
+        // Пронумеровываем победы и поражения
+        sortedBattles = sortedBattles.map(battle => {
             if (battle.battleResult.includes("[win!]")) {
                 let formattedNumber = winCount.toString().padStart(maxWidth, "0");
-                battle.battleResult = `(${formattedNumber}) ` + battle.battleResult;
                 winCount++;
+                return { ...battle, battleResult: `(${formattedNumber}) ` + battle.battleResult };
             } else if (battle.battleResult.includes("[lose]")) {
                 let minusString = "-".repeat(maxWidth);
-                battle.battleResult = `(${minusString}) ` + battle.battleResult;
+                return { ...battle, battleResult: `(${minusString}) ` + battle.battleResult };
             }
+            return battle;
         });
 
-        // Восстанавливаем исходный порядок
-        battles = battles.map(battle => sortedBattles[indexMap.get(battle.dateTime)]);
-
-        // Если порядок должен быть обратным, разворачиваем список
+        // Восстанавливаем порядок, если он был обратным
         if (!sortAscending) {
-            battles.reverse();
+            sortedBattles.reverse();
         }
+
+        // Обновляем `battles`, чтобы они содержали номера
+        battles = sortedBattles;
     }
 
 
