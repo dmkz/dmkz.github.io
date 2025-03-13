@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v41-013</h2>
+    <h2>Парсер боёв v41-014</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -337,35 +337,32 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     if (numberBattles) {
         let sortAscending = document.getElementById("sortAscending").checked;
         
-        // Отбираем все победы и сортируем их по дате (от старых к новым)
-        let winBattles = battles.filter(b => b.battleResult.includes("[win!]"));
-        winBattles.sort((a, b) => a.dateTime.localeCompare(b.dateTime));
+        // Сортируем список по дате (по возрастанию)
+        let sortedBattles = [...battles].sort((a, b) => a.dateTime.localeCompare(b.dateTime));
+
+        // Индексируем по дате для быстрого поиска
+        let indexMap = new Map(sortedBattles.map((battle, index) => [battle.dateTime, index]));
 
         let winCount = startNumber;
-        let maxWinNumber = startNumber + winBattles.length - 1;
+        let maxWinNumber = startNumber + sortedBattles.filter(b => b.battleResult.includes("[win!]")).length - 1;
         let maxWidth = maxWinNumber.toString().length;
 
-        // Проставляем номера только победам (по хронологии)
-        let battleMap = new Map();
-        for (let battle of winBattles) {
-            let formattedNumber = winCount.toString().padStart(maxWidth, "0");
-            battleMap.set(battle.dateTime, `(${formattedNumber}) ` + battle.battleResult);
-            winCount++;
-        }
-
-        // Применяем нумерацию обратно к списку battles
-        battles = battles.map(battle => {
-            if (battleMap.has(battle.dateTime)) {
-                return { ...battle, battleResult: battleMap.get(battle.dateTime) };
-            }
-            if (battle.battleResult.includes("[lose]")) {
+        // Проставляем номера всем победам по порядку
+        sortedBattles.forEach(battle => {
+            if (battle.battleResult.includes("[win!]")) {
+                let formattedNumber = winCount.toString().padStart(maxWidth, "0");
+                battle.battleResult = `(${formattedNumber}) ` + battle.battleResult;
+                winCount++;
+            } else if (battle.battleResult.includes("[lose]")) {
                 let minusString = "-".repeat(maxWidth);
-                return { ...battle, battleResult: `(${minusString}) ` + battle.battleResult };
+                battle.battleResult = `(${minusString}) ` + battle.battleResult;
             }
-            return battle;
         });
 
-        // Если порядок обратный, переворачиваем список battles
+        // Восстанавливаем исходный порядок
+        battles = battles.map(battle => sortedBattles[indexMap.get(battle.dateTime)]);
+
+        // Если порядок должен быть обратным, разворачиваем список
         if (!sortAscending) {
             battles.reverse();
         }
