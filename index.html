@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-003</h2>
+    <h2>Парсер боёв v40-031</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -147,38 +147,7 @@
     <button id="copyButton" onclick="copyResult()">Скопировать результат</button>
     
     <script>
-function getPlayerName(htmlContent) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlContent, "text/html");
 
-    const header = doc.querySelector(".global_container_block_header");
-    let playerName = "";
-
-    if (header) {
-        const match = header.innerHTML.match(/Протокол боев\s+<a.*?><b>(.*?)<\/b><\/a>/);
-        if (match) {
-            playerName = match[1]; // Основной ник без уровня
-        }
-    }
-
-    if (!playerName) {
-        console.error("Не удалось определить ник игрока.");
-        return "Результат";
-    }
-
-    // Ищем все уровни в боевых записях
-    const levelMatches = [...htmlContent.matchAll(new RegExp(`${playerName}\\[(\\d+)\\]`, "g"))];
-    
-    // Извлекаем уровни в виде чисел и сортируем
-    const levels = [...new Set(levelMatches.map(m => parseInt(m[1], 10)))].sort((a, b) => a - b);
-
-    if (levels.length > 0) {
-        // Если уровень один, просто добавляем его. Если несколько, записываем диапазон.
-        playerName += levels.length === 1 ? `[${levels[0]}]` : `[${levels[0]}-${levels[levels.length - 1]}]`;
-    }
-
-    return playerName;
-}
 function clearInput() {
     document.getElementById("battleInput").value = "";
 }
@@ -206,14 +175,13 @@ function copyResult() {
 function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     html = cleanSpecialSymbols(html);
     html = html.replace(/&nbsp;/g, ' ');
-
+    let playerCounts = {}; // Сюда будем записывать частоту никнеймов
     let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*(.*?)<!--\d+-->/gs)];
     
     let battles = [];
     let useLordswm = document.getElementById('useLordswm').checked;
     let removeDate = document.getElementById("removeDate").checked;
     let removeMostCommon = document.getElementById("removeMostCommon").checked;
-    let playerName = getPlayerName(html);
     
     for (let match of battleMatches) {
         let warId = match[1];
@@ -224,6 +192,16 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
         let sides = participantsRaw.split(/\s+vs\s+/g);
         let sidesParsed = sides.map(side => extractPlayerNames(side));
+        // Добавляем никнеймы в статистику
+        for (let side of sidesParsed) {
+            for (let playerName of side) {
+                if (!playerCounts[playerName]) {
+                    playerCounts[playerName] = 0;
+                }
+                playerCounts[playerName]++;
+            }
+        }
+        
         let sidesStatus = sides.map(side => side.includes("<b>") ? "[win]" : "[lose]");
 
         let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
@@ -231,43 +209,100 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         if (secretCode) battleLink += `&show=${secretCode}`;
         if (watchFromStart) battleLink += "&lt";
 
-        let playerBaseName = playerName.replace(/\[\d+(-\d+)?\]/, "").trim();
-        let playerSideIndex = sidesParsed.findIndex(side =>
-            side.some(name => name.replace(/\[\d+(-\d+)?\]/, "").trim() === playerBaseName)
-        );
-
-        // ✅ Определяем победу или поражение игрока
-        let playerResult = "[lose]";
-        if (playerSideIndex !== -1 && sidesStatus[playerSideIndex] === "[win]") {
-            playerResult = "[win]";
-        }
-
-        // ✅ Удаляем всю сторону, содержащую игрока, если чекбокс removeMostCommon включен
-        if (removeMostCommon && playerSideIndex !== -1) {
-            sidesParsed.splice(playerSideIndex, 1);
-            sidesStatus.splice(playerSideIndex, 1);
-        }
-
-        // ✅ Если чекбокс включен, убираем [win]/[lose] у остальных игроков
-        if (removeMostCommon) {
-            sidesParsed = sidesParsed.map(players =>
-                players.map(name => name.replace(/\s*\[win\]|\s*\[lose\]/g, ""))
-            );
-        }
-
-        // ✅ Формируем итоговую строку
-        let battleResult;
-        if (removeMostCommon) {
-            // Если удаляем сторону игрока, результат идет первым
-            battleResult = `${formattedDateTime} ${playerResult} ` + 
-                sidesParsed.map(players => players.join(", ")).join(" vs ") + ` ${battleLink}`;
-        } else {
-            // Если никнейм оставляем, результат в бою у всех сохраняется
-            battleResult = formattedDateTime + " " +
-                sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
-        }
+        // Если никнейм оставляем, результат в бою у всех сохраняется
+        let battleResult = `${formattedDateTime} ` +
+            sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
 
         battles.push({ dateTime: formattedDateTime, battleResult });
+    }
+    
+    // Определяем самого частого игрока (основного)
+    let maxCount = 0;
+    let mostCommonPlayer = "";
+
+    for (let player in playerCounts) {
+        if (playerCounts[player] > maxCount) {
+            maxCount = playerCounts[player];
+            mostCommonPlayer = player;
+        }
+    }
+
+    // Выводим в заголовок результата
+    document.getElementById("resultTitle").textContent = mostCommonPlayer;
+    console.log("mostCommonPlayer", mostCommonPlayer);
+    
+    if (removeMostCommon && mostCommonPlayer) {
+        console.log("Обрабатываем ник:", mostCommonPlayer);
+
+        // Убираем уровень из ника игрока
+        let playerNameOnly = "";
+        for (let i = 0; i < mostCommonPlayer.length; i++) {
+            if (mostCommonPlayer[i] === "[") break; // Останавливаемся перед уровнем
+            playerNameOnly += mostCommonPlayer[i];
+        }
+        console.log("Имя игрока без уровня:", playerNameOnly);
+
+        battles = battles.map(battle => {
+            console.log("До обработки:", battle.battleResult);
+
+            let battleParts = battle.battleResult.split(" ");
+            if (battleParts.length < 3) return battle; // Если формат сломан, пропускаем
+
+            let dateTime = battleParts.slice(0, 2).join(" "); // Дата и время
+            let resultPart = battleParts.slice(2).join(" "); // Остальная часть строки
+
+            let parts = resultPart.split(" vs ");
+            let playerResult = null;
+            let battleLink = "";
+            let newParts = [];
+
+            // Ищем сторону игрока
+            for (let i = 0; i < parts.length; i++) {
+                let side = parts[i].trim();
+
+                // Проверяем, содержит ли сторона ссылку
+                let linkStart = side.indexOf("http");
+                if (linkStart !== -1) {
+                    battleLink = side.slice(linkStart);
+                    side = side.slice(0, linkStart).trim();
+                }
+
+                // Находим индекс начала ника (без уровня)
+                let foundIndex = -1;
+                for (let j = 0; j <= side.length - playerNameOnly.length; j++) {
+                    if (side.slice(j, j + playerNameOnly.length) === playerNameOnly) {
+                        foundIndex = j;
+                        break;
+                    }
+                }
+
+                if (foundIndex !== -1) {
+                    // Проверяем, что сразу после ника идёт уровень (например, "[18]" или "[19]")
+                    let nextChar = side[foundIndex + playerNameOnly.length];
+                    if (nextChar === "[") {
+                        console.log(`Игрок найден в стороне: ${side}`);
+
+                        // Запоминаем win/lose, но убираем игрока
+                        playerResult = side.includes("[win]") ? "[win]" : "[lose]";
+                        continue; // Пропускаем добавление этой стороны
+                    }
+                }
+
+                // Убираем win/lose у других сторон
+                let cleanSide = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
+                newParts.push(cleanSide);
+            }
+
+            if (playerResult === null) {
+                console.log("Игрок не найден в этой строке:", battle.battleResult);
+                return battle;
+            }
+
+            // Собираем строку заново: дата + win/lose + оставшиеся стороны + ссылка
+            let cleanedResult = `${dateTime} ${playerResult} ${newParts.join(" vs ")} ${battleLink}`.trim();
+            console.log("После обработки:", cleanedResult);
+            return { ...battle, battleResult: cleanedResult };
+        });
     }
     
     battles.sort((a, b) => b.dateTime.localeCompare(a.dateTime));
@@ -283,7 +318,8 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     } else {
         battles = battles.map(battle => battle.battleResult);
     }
-    
+    battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim()); // Убираем висячие запятые
+    battles = battles.filter(battle => battle.trim().length > 0); // Убираем пустые строки
     return battles.join("\n");
 }
 
@@ -322,8 +358,6 @@ function decodeHTMLEntities(text) {
 
 function processBattles() {
     let html = document.getElementById("battleInput").value;
-    let playerName = getPlayerName(html);
-    document.getElementById("resultTitle").textContent = playerName; // Обновляем заголовок
     let filters = document.getElementById("filterInput").value.split('\n').map(f => f.trim()).filter(f => f);
     let doFilter = document.getElementById("doFilter").checked;
     let onlyWins = document.getElementById("onlyWins").checked;

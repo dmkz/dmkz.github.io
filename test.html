@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-031</h2>
+    <h2>Парсер боёв v41-002</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -135,6 +135,13 @@
         <label><input type="checkbox" id="removeDate"> Удалить дату и время после сортировки</label><br>
         <label><input type="checkbox" id="removeMostCommon"> Удалить никнейм</label><br>
         <label><input type="checkbox" id="useLordswm"> Использовать my.lordswm.com вместо www.heroeswm.ru</label>
+        <label>
+            <input type="checkbox" id="numberBattles"> Пронумеровать бои
+        </label><br>
+        <label>
+            Начальный номер:
+            <input type="number" id="startNumber" value="1" min="1">
+        </label><br>
     </div>
     
     <button onclick="processBattles()">Обработать</button>
@@ -311,6 +318,24 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         battles = battles.filter(battle =>
             filters.some(filterText => battle.battleResult.includes(filterText))
         );
+    }
+    
+    let numberBattles = document.getElementById("numberBattles").checked;
+    let startNumber = parseInt(document.getElementById("startNumber").value, 10) || 1;
+
+    if (numberBattles) {
+        let winCount = startNumber - 1;
+
+        for (let i = battles.length - 1; i >= 0; i--) {
+            let battle = battles[i];
+
+            if (battle.includes("[win]")) {
+                winCount++;
+                battles[i] = `(${winCount}) ` + battle;
+            } else if (battle.includes("[lose]")) {
+                battles[i] = `(-) ` + battle;
+            }
+        }
     }
     
     if (removeDate) {
