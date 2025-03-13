@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v41-008</h2>
+    <h2>Парсер боёв v41-009</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -336,13 +336,20 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
     if (numberBattles) {
         let winCount = startNumber - 1;
-        let maxWinNumber = startNumber + battles.filter(b => b.battleResult.includes("[win]")).length - 1;
-        let maxWidth = maxWinNumber.toString().length; // Определяем ширину максимального номера
+        let sortAscending = document.getElementById("sortAscending").checked;
 
-        for (let i = battles.length - 1; i >= 0; i--) {
+        // Определяем ширину номеров
+        let winBattles = battles.filter(b => b.battleResult.includes("[win!]"));
+        let maxWinNumber = startNumber + winBattles.length - 1;
+        let maxWidth = maxWinNumber.toString().length;
+
+        // Выбираем правильный порядок нумерации
+        let battleIndexes = sortAscending ? [...Array(battles.length).keys()] : [...Array(battles.length).keys()].reverse();
+
+        for (let i of battleIndexes) {
             let battle = battles[i];
 
-            if (battle.battleResult.includes("[win]")) {
+            if (battle.battleResult.includes("[win!]")) {
                 winCount++;
                 let formattedNumber = winCount.toString().padStart(maxWidth, "0");
                 battles[i].battleResult = `(${formattedNumber}) ` + battle.battleResult;
