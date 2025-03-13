@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v41-016</h2>
+    <h2>Парсер боёв v41-017</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -340,7 +340,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         let foundNumbering = false; // Флаг проверки, что номера добавлены
 
         for (let i = 0; i < battles.length; i++) {
-            if (battles[i].battleResult.includes("[win!]")) {
+            if (battles[i].battleResult.includes("[win]")) {
                 let formattedNumber = winCount.toString().padStart(maxWidth, "0");
                 battles[i].battleResult = `(${formattedNumber}) ` + battles[i].battleResult;
                 winCount++;
