@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v41-018</h2>
+    <h2>Парсер боёв v41-019</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -386,6 +386,9 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim()); // Убираем висячие запятые
     battles = battles.filter(battle => battle.trim().length > 0); // Убираем пустые строки
     battles = battles.map(battle => battle.replace("[win]", "[win!]"));
+    if (onlyWins) {
+        battles = battles.filter(battle => battle.battleResult.includes("[win!]"));
+    }
     let includeAd = document.getElementById("includeAd").checked;
     if (includeAd) {
         let currentURL = window.location.href;
