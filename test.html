@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v41-015</h2>
+    <h2>Парсер боёв v41-016</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -335,36 +335,29 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     let startNumber = parseInt(document.getElementById("startNumber").value, 10) || 1;
 
     if (numberBattles) {
-        let sortAscending = document.getElementById("sortAscending").checked;
+        let winCount = startNumber; // Начальный номер
+        let maxWidth = (winCount + battles.length).toString().length; // Определяем длину номера
+        let foundNumbering = false; // Флаг проверки, что номера добавлены
 
-        // Копируем список и сортируем по дате (всегда от старых к новым)
-        let sortedBattles = [...battles].sort((a, b) => a.dateTime.localeCompare(b.dateTime));
-
-        // Создаём счётчик побед
-        let winCount = startNumber;
-        let totalWins = sortedBattles.filter(b => b.battleResult.includes("[win!]")).length;
-        let maxWidth = (startNumber + totalWins - 1).toString().length;
-
-        // Пронумеровываем победы и поражения
-        sortedBattles = sortedBattles.map(battle => {
-            if (battle.battleResult.includes("[win!]")) {
+        for (let i = 0; i < battles.length; i++) {
+            if (battles[i].battleResult.includes("[win!]")) {
                 let formattedNumber = winCount.toString().padStart(maxWidth, "0");
+                battles[i].battleResult = `(${formattedNumber}) ` + battles[i].battleResult;
                 winCount++;
-                return { ...battle, battleResult: `(${formattedNumber}) ` + battle.battleResult };
-            } else if (battle.battleResult.includes("[lose]")) {
+                foundNumbering = true; // Отмечаем, что номер был добавлен
+            } else if (battles[i].battleResult.includes("[lose]")) {
                 let minusString = "-".repeat(maxWidth);
-                return { ...battle, battleResult: `(${minusString}) ` + battle.battleResult };
+                battles[i].battleResult = `(${minusString}) ` + battles[i].battleResult;
+                foundNumbering = true; // Отмечаем, что номер был добавлен
             }
-            return battle;
-        });
-
-        // Восстанавливаем порядок, если он был обратным
-        if (!sortAscending) {
-            sortedBattles.reverse();
         }
 
-        // Обновляем `battles`, чтобы они содержали номера
-        battles = sortedBattles;
+        // Проверяем, что номера добавились
+        if (!foundNumbering) {
+            console.error("❌ Ошибка: номера не были добавлены!");
+        } else {
+            console.log("✅ Номера успешно добавлены.");
+        }
     }
 
 
