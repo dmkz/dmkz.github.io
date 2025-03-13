@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v41-007</h2>
+    <h2>Парсер боёв v41-008</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -145,6 +145,12 @@
         <label>
             Начальный номер:
             <input type="number" id="startNumber" value="1" min="1">
+        </label><br>
+        <label>
+            <input type="checkbox" id="sortAscending"> Прямой порядок сортировки
+        </label><br>
+        <label>
+            <input type="checkbox" id="includeAd" checked> Добавить ссылку на генератор
         </label><br>
     </div>
     
@@ -316,7 +322,8 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         });
     }
     
-    battles.sort((a, b) => b.dateTime.localeCompare(a.dateTime));
+    let sortAscending = document.getElementById("sortAscending").checked;
+    battles.sort((a, b) => sortAscending ? a.dateTime.localeCompare(b.dateTime) : b.dateTime.localeCompare(a.dateTime));
     
     if (doFilter && filters.length > 0) {
         battles = battles.filter(battle =>
@@ -362,6 +369,11 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim()); // Убираем висячие запятые
     battles = battles.filter(battle => battle.trim().length > 0); // Убираем пустые строки
     battles = battles.map(battle => battle.replace("[win]", "[win!]"));
+    let includeAd = document.getElementById("includeAd").checked;
+    if (includeAd) {
+        let currentURL = window.location.href;
+        battles.push(`\nСписок боев сгенерирован здесь: ${currentURL}`);
+    }
     return battles.join("\n");
 }
 
