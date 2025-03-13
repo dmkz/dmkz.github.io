@@ -95,10 +95,14 @@
         .half {
             flex: 1;
         }
+        #result {
+            text-align: left; /* Выравнивание текста по левому краю */
+            white-space: pre-wrap; /* Перенос строк внутри <pre> */
+        }
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v41-006</h2>
+    <h2>Парсер боёв v41-007</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -357,6 +361,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     battles = battles.map(battle => battle.battleResult);
     battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim()); // Убираем висячие запятые
     battles = battles.filter(battle => battle.trim().length > 0); // Убираем пустые строки
+    battles = battles.map(battle => battle.replace("[win]", "[win!]"));
     return battles.join("\n");
 }
 
