@@ -95,10 +95,14 @@
         .half {
             flex: 1;
         }
+        #result {
+            text-align: left; /* Выравнивание текста по левому краю */
+            white-space: pre-wrap; /* Перенос строк внутри <pre> */
+        }
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v40-031</h2>
+    <h2>Парсер боёв v41</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -134,7 +138,20 @@
         <label><input type="checkbox" id="watchFromStart" checked> Указывать на начало боя</label><br>
         <label><input type="checkbox" id="removeDate"> Удалить дату и время после сортировки</label><br>
         <label><input type="checkbox" id="removeMostCommon"> Удалить никнейм</label><br>
-        <label><input type="checkbox" id="useLordswm"> Использовать my.lordswm.com вместо www.heroeswm.ru</label>
+        <label><input type="checkbox" id="useLordswm"> Использовать my.lordswm.com вместо www.heroeswm.ru</label><br>
+        <label>
+            <input type="checkbox" id="numberBattles"> Пронумеровать бои
+        </label>
+        <label>
+            Начальный номер:
+            <input type="number" id="startNumber" value="1" min="1">
+        </label><br>
+        <label>
+            <input type="checkbox" id="sortAscending"> Прямой порядок сортировки
+        </label><br>
+        <label>
+            <input type="checkbox" id="includeAd" checked> Добавить ссылку на генератор
+        </label><br>
     </div>
     
     <button onclick="processBattles()">Обработать</button>
@@ -305,7 +322,8 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         });
     }
     
-    battles.sort((a, b) => b.dateTime.localeCompare(a.dateTime));
+    let sortAscending = document.getElementById("sortAscending").checked;
+    battles.sort((a, b) => sortAscending ? a.dateTime.localeCompare(b.dateTime) : b.dateTime.localeCompare(a.dateTime));
     
     if (doFilter && filters.length > 0) {
         battles = battles.filter(battle =>
@@ -313,13 +331,72 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         );
     }
     
-    if (removeDate) {
-        battles = battles.map(battle => battle.battleResult.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, ''));
-    } else {
-        battles = battles.map(battle => battle.battleResult);
+    let numberBattles = document.getElementById("numberBattles").checked;
+    let startNumber = parseInt(document.getElementById("startNumber").value, 10) || 1;
+
+    if (numberBattles) {
+        let winCount = startNumber; // Начинаем нумерацию с указанного значения
+        let maxWidth = (winCount + battles.length).toString().length; // Длина номера
+        let foundNumbering = false; // Проверяем, что номера добавились
+
+        // 1️⃣ Сортируем бои по дате (от старых к новым)
+        battles.sort((a, b) => a.dateTime.localeCompare(b.dateTime));
+
+        // 2️⃣ Пронумеруем все бои
+        for (let i = 0; i < battles.length; i++) {
+            if (battles[i].battleResult.includes("[win]")) {
+                let formattedNumber = winCount.toString().padStart(maxWidth, "0");
+                battles[i].battleResult = `(${formattedNumber}) ` + battles[i].battleResult;
+                winCount++;
+                foundNumbering = true;
+            } else if (battles[i].battleResult.includes("[lose]")) {
+                let minusString = "-".repeat(maxWidth);
+                battles[i].battleResult = `(${minusString}) ` + battles[i].battleResult;
+                foundNumbering = true;
+            }
+        }
+
+        // 3️⃣ Проверка, что номера были добавлены
+        if (!foundNumbering) {
+            console.error("❌ Ошибка: номера не были добавлены!");
+        } else {
+            console.log("✅ Номера успешно добавлены.");
+        }
+
+        // 4️⃣ Если включен "Прямой порядок сортировки", оставляем порядок, иначе переворачиваем обратно
+        if (!sortAscending) {
+            battles.reverse();
+        }
     }
+
+
+    // Удаление даты после нумерации
+    if (removeDate) {
+        battles = battles.map(battle => ({
+            ...battle,
+            battleResult: battle.battleResult.replace(
+                /^(\(\d+\)|\(-+\)) \d{2}-\d{2}-\d{2} \d{2}:\d{2} /, // Удаляет дату после нумерации
+                "$1 " // Оставляет только (номер) или (---)
+            )
+        }));
+    }
+
+    // Финальное преобразование в строку
+    battles = battles.map(battle => battle.battleResult);
     battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim()); // Убираем висячие запятые
     battles = battles.filter(battle => battle.trim().length > 0); // Убираем пустые строки
+    
+    battles = battles.map(battle => battle.replace("[win]", "[win!]"));
+    
+    console.log("onlyWins", onlyWins);
+    if (onlyWins) {
+        battles = battles.filter(battle => battle.includes("[win!]"));
+    }
+    let includeAd = document.getElementById("includeAd").checked;
+    if (includeAd) {
+        let currentURL = window.location.href;
+        battles.push(`\nСписок боев сгенерирован здесь: ${currentURL}`);
+    }
     return battles.join("\n");
 }
 
