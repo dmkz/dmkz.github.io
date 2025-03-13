@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v41-008</h2>
+    <h2>Парсер боёв v41-009</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -353,6 +353,15 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         }
     }
 
+    let battleNumbers = battles
+        .map(battle => battle.match(/\((\d+)\)/)) // Ищем номера в скобках (числа)
+        .filter(match => match) // Оставляем только найденные
+        .map(match => parseInt(match[1], 10)) // Преобразуем в числа
+        .sort((a, b) => a - b); // Сортируем по возрастанию
+
+    let minNumber = battleNumbers.length > 0 ? Math.min(...battleNumbers) : null;
+    let maxNumber = battleNumbers.length > 0 ? Math.max(...battleNumbers) : null;
+
     // Удаление даты после нумерации
     if (removeDate) {
         battles = battles.map(battle => ({
@@ -374,6 +383,14 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         let currentURL = window.location.href;
         battles.push(`\nСписок боев сгенерирован здесь: ${currentURL}`);
     }
+    let playerName = mostCommonPlayer.replace(/\[\d+\]/, '').trim();
+    let playerLevelMatch = mostCommonPlayer.match(/\[(\d+)\]/);
+    let playerLevel = playerLevelMatch ? playerLevelMatch[1] : "?"; // Если уровня нет, ставим "?"
+    let newTitle = `${playerName}, ${playerLevel} уровень`;
+    if (numberBattles && minNumber !== null && maxNumber !== null) {
+        newTitle += `, бои ${minNumber}-${maxNumber}`;
+    }
+    document.getElementById("resultTitle").textContent = newTitle;
     return battles.join("\n");
 }
 
