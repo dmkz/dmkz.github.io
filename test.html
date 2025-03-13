@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v41-010</h2>
+    <h2>Парсер боёв v41-009</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -192,7 +192,6 @@ function copyResult() {
 function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     html = cleanSpecialSymbols(html);
     html = html.replace(/&nbsp;/g, ' ');
-    
     let playerCounts = {}; // Сюда будем записывать частоту никнеймов
     let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*(.*?)<!--\d+-->/gs)];
     
@@ -210,7 +209,6 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
         let sides = participantsRaw.split(/\s+vs\s+/g);
         let sidesParsed = sides.map(side => extractPlayerNames(side));
-        
         // Добавляем никнеймы в статистику
         for (let side of sidesParsed) {
             for (let playerName of side) {
@@ -221,16 +219,16 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             }
         }
         
-        let sidesStatus = sides.map(side => side.includes("<b>") ? "[win!]" : "[lose]");
+        let sidesStatus = sides.map(side => side.includes("<b>") ? "[win]" : "[lose]");
 
         let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
         let battleLink = `https://${baseDomain}/warlog.php?warid=${warId}`;
         if (secretCode) battleLink += `&show=${secretCode}`;
         if (watchFromStart) battleLink += "&lt";
 
+        // Если никнейм оставляем, результат в бою у всех сохраняется
         let battleResult = `${formattedDateTime} ` +
-            sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + 
-            ` ${battleLink}`;
+            sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
 
         battles.push({ dateTime: formattedDateTime, battleResult });
     }
@@ -248,36 +246,78 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
 
     // Выводим в заголовок результата
     document.getElementById("resultTitle").textContent = mostCommonPlayer;
+    console.log("mostCommonPlayer", mostCommonPlayer);
     
     if (removeMostCommon && mostCommonPlayer) {
-        let playerNameOnly = mostCommonPlayer.replace(/\[\d+\]/, '').trim();
-        
+        console.log("Обрабатываем ник:", mostCommonPlayer);
+
+        // Убираем уровень из ника игрока
+        let playerNameOnly = "";
+        for (let i = 0; i < mostCommonPlayer.length; i++) {
+            if (mostCommonPlayer[i] === "[") break; // Останавливаемся перед уровнем
+            playerNameOnly += mostCommonPlayer[i];
+        }
+        console.log("Имя игрока без уровня:", playerNameOnly);
+
         battles = battles.map(battle => {
-            let parts = battle.battleResult.split(" vs ");
+            console.log("До обработки:", battle.battleResult);
+
+            let battleParts = battle.battleResult.split(" ");
+            if (battleParts.length < 3) return battle; // Если формат сломан, пропускаем
+
+            let dateTime = battleParts.slice(0, 2).join(" "); // Дата и время
+            let resultPart = battleParts.slice(2).join(" "); // Остальная часть строки
+
+            let parts = resultPart.split(" vs ");
             let playerResult = null;
             let battleLink = "";
             let newParts = [];
 
+            // Ищем сторону игрока
             for (let i = 0; i < parts.length; i++) {
                 let side = parts[i].trim();
 
+                // Проверяем, содержит ли сторона ссылку
                 let linkStart = side.indexOf("http");
                 if (linkStart !== -1) {
                     battleLink = side.slice(linkStart);
                     side = side.slice(0, linkStart).trim();
                 }
 
-                if (side.includes(playerNameOnly)) {
-                    playerResult = side.includes("[win!]") ? "[win!]" : "[lose]";
-                    continue;
+                // Находим индекс начала ника (без уровня)
+                let foundIndex = -1;
+                for (let j = 0; j <= side.length - playerNameOnly.length; j++) {
+                    if (side.slice(j, j + playerNameOnly.length) === playerNameOnly) {
+                        foundIndex = j;
+                        break;
+                    }
                 }
 
-                newParts.push(side.replace(/\s*\[win!\]|\s*\[lose\]/gi, '').trim());
+                if (foundIndex !== -1) {
+                    // Проверяем, что сразу после ника идёт уровень (например, "[18]" или "[19]")
+                    let nextChar = side[foundIndex + playerNameOnly.length];
+                    if (nextChar === "[") {
+                        console.log(`Игрок найден в стороне: ${side}`);
+
+                        // Запоминаем win/lose, но убираем игрока
+                        playerResult = side.includes("[win]") ? "[win]" : "[lose]";
+                        continue; // Пропускаем добавление этой стороны
+                    }
+                }
+
+                // Убираем win/lose у других сторон
+                let cleanSide = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
+                newParts.push(cleanSide);
             }
 
-            if (playerResult === null) return battle;
+            if (playerResult === null) {
+                console.log("Игрок не найден в этой строке:", battle.battleResult);
+                return battle;
+            }
 
-            let cleanedResult = `${battle.dateTime} ${playerResult} ${newParts.join(" vs ")} ${battleLink}`.trim();
+            // Собираем строку заново: дата + win/lose + оставшиеся стороны + ссылка
+            let cleanedResult = `${dateTime} ${playerResult} ${newParts.join(" vs ")} ${battleLink}`.trim();
+            console.log("После обработки:", cleanedResult);
             return { ...battle, battleResult: cleanedResult };
         });
     }
@@ -290,63 +330,66 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             filters.some(filterText => battle.battleResult.includes(filterText))
         );
     }
-
+    
     let numberBattles = document.getElementById("numberBattles").checked;
     let startNumber = parseInt(document.getElementById("startNumber").value, 10) || 1;
 
     if (numberBattles) {
         let winCount = startNumber - 1;
-        let maxWinNumber = startNumber + battles.filter(b => b.battleResult.includes("[win!]")).length - 1;
-        let maxWidth = maxWinNumber.toString().length; 
+        let maxWinNumber = startNumber + battles.filter(b => b.battleResult.includes("[win]")).length - 1;
+        let maxWidth = maxWinNumber.toString().length; // Определяем ширину максимального номера
 
         for (let i = battles.length - 1; i >= 0; i--) {
-            if (battles[i].battleResult.includes("[win!]")) {
+            let battle = battles[i];
+
+            if (battle.battleResult.includes("[win]")) {
                 winCount++;
                 let formattedNumber = winCount.toString().padStart(maxWidth, "0");
-                battles[i].battleResult = `(${formattedNumber}) ` + battles[i].battleResult;
-            } else if (battles[i].battleResult.includes("[lose]")) {
+                battles[i].battleResult = `(${formattedNumber}) ` + battle.battleResult;
+            } else if (battle.battleResult.includes("[lose]")) {
                 let minusString = "-".repeat(maxWidth);
-                battles[i].battleResult = `(${minusString}) ` + battles[i].battleResult;
+                battles[i].battleResult = `(${minusString}) ` + battle.battleResult;
             }
         }
     }
 
     let battleNumbers = battles
-        .map(battle => {
-            let match = battle.battleResult.match(/\((\d+)\)/);
-            return match ? parseInt(match[1], 10) : null;
-        })
-        .filter(num => num !== null)
-        .sort((a, b) => a - b);
+        .map(battle => battle.match(/\((\d+)\)/)) // Ищем номера в скобках (числа)
+        .filter(match => match) // Оставляем только найденные
+        .map(match => parseInt(match[1], 10)) // Преобразуем в числа
+        .sort((a, b) => a - b); // Сортируем по возрастанию
 
     let minNumber = battleNumbers.length > 0 ? Math.min(...battleNumbers) : null;
     let maxNumber = battleNumbers.length > 0 ? Math.max(...battleNumbers) : null;
 
+    // Удаление даты после нумерации
     if (removeDate) {
-        battles = battles.map(battle =>
-            battle.battleResult.replace(/^(\(\d+\)|\(-+\)) \d{2}-\d{2}-\d{2} \d{2}:\d{2} /, "$1 ")
-        );
+        battles = battles.map(battle => ({
+            ...battle,
+            battleResult: battle.battleResult.replace(
+                /^(\(\d+\)|\(-+\)) \d{2}-\d{2}-\d{2} \d{2}:\d{2} /, // Удаляет дату после нумерации
+                "$1 " // Оставляет только (номер) или (---)
+            )
+        }));
     }
 
+    // Финальное преобразование в строку
     battles = battles.map(battle => battle.battleResult);
-    battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim());
-    battles = battles.filter(battle => battle.trim().length > 0);
-
+    battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim()); // Убираем висячие запятые
+    battles = battles.filter(battle => battle.trim().length > 0); // Убираем пустые строки
+    battles = battles.map(battle => battle.replace("[win]", "[win!]"));
     let includeAd = document.getElementById("includeAd").checked;
     if (includeAd) {
         let currentURL = window.location.href;
         battles.push(`\nСписок боев сгенерирован здесь: ${currentURL}`);
     }
-
     let playerName = mostCommonPlayer.replace(/\[\d+\]/, '').trim();
     let playerLevelMatch = mostCommonPlayer.match(/\[(\d+)\]/);
-    let playerLevel = playerLevelMatch ? playerLevelMatch[1] : "?";
+    let playerLevel = playerLevelMatch ? playerLevelMatch[1] : "?"; // Если уровня нет, ставим "?"
     let newTitle = `${playerName}, ${playerLevel} уровень`;
-
     if (numberBattles && minNumber !== null && maxNumber !== null) {
         newTitle += `, бои ${minNumber}-${maxNumber}`;
     }
-
     document.getElementById("resultTitle").textContent = newTitle;
     return battles.join("\n");
 }
