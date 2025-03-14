@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v42-001</h2>
+    <h2>Парсер боёв v42-002</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -192,7 +192,7 @@ function copyResult() {
 function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     html = cleanSpecialSymbols(html);
     html = html.replace(/&nbsp;/g, ' ');
-    let playerCounts = {}; // Считаем, сколько раз встречается каждый ник
+    let playerCounts = {}; // Подсчитываем, сколько раз встречается каждый ник
     let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*(.*?)<!--\d+-->/gs)];
     
     let battles = [];
@@ -234,7 +234,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         battles.push({ dateTime: formattedDateTime, battleResult });
     }
     
-    // Определяем основного игрока (самый часто встречающийся ник)
+    // Определяем основного игрока (самый частый ник)
     let maxCount = 0;
     let mostCommonPlayer = "";
     for (let player in playerCounts) {
@@ -243,23 +243,21 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             mostCommonPlayer = player;
         }
     }
-    // Выводим найденного основного игрока в заголовок
+    // Выводим найденного основного игрока в заголовок результата
     document.getElementById("resultTitle").textContent = mostCommonPlayer;
     console.log("mostCommonPlayer", mostCommonPlayer);
     
-    // Определяем результат (победа/поражение) основного игрока во всех боях
-    // Эта логика выполняется всегда, а удаление ника происходит лишь при выбранной опции
+    // Определяем результат (победа/поражение) основного игрока во всех боях.
+    // Для сопоставления всегда используем базовое имя (до первого символа "[")
     if (mostCommonPlayer) {
-        // Если опция "Удалить никнейм" выбрана, для поиска используем имя без уровня
-        let playerSearchName = mostCommonPlayer;
-        if (removeMostCommon) {
-            let playerNameOnly = "";
-            for (let i = 0; i < mostCommonPlayer.length; i++) {
-                if (mostCommonPlayer[i] === "[") break;
-                playerNameOnly += mostCommonPlayer[i];
-            }
-            playerSearchName = playerNameOnly;
+        let basePlayerName = "";
+        for (let i = 0; i < mostCommonPlayer.length; i++) {
+            if (mostCommonPlayer[i] === "[") break;
+            basePlayerName += mostCommonPlayer[i];
         }
+        // Всегда используем базовое имя для поиска, чтобы матчились и бои с разными уровнями
+        let playerSearchName = basePlayerName;
+        
         battles = battles.map(battle => {
             let battleParts = battle.battleResult.split(" ");
             if (battleParts.length < 3) return battle; // Если формат не соответствует
@@ -278,10 +276,10 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
                     battleLink = side.slice(linkStart);
                     side = side.slice(0, linkStart).trim();
                 }
-                // Если в стороне найден основной игрок
+                // Если в стороне найден базовый ник основного игрока
                 if (side.includes(playerSearchName)) {
                     playerResult = side.includes("[win]") ? "[win]" : "[lose]";
-                    // Если удаляем ник, убираем его из строки
+                    // Если выбрана опция "Удалить никнейм", удаляем базовое имя
                     if (removeMostCommon) {
                         side = side.replace(playerSearchName, "").trim();
                     }
