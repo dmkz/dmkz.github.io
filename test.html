@@ -181,7 +181,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-009</h2>
+  <h2>Парсер боёв v2-010</h2>
 
   <div id="inputContainer">
     <!-- Блок FAQ с вопросами и ответами -->
@@ -306,7 +306,7 @@
     }
   
 function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
-  // Предварительная обработка
+  // Предварительная обработка HTML
   html = cleanSpecialSymbols(html);
   html = html.replace(/&nbsp;/g, ' ');
   let playerCounts = {};
@@ -317,14 +317,14 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
   let removeDate = document.getElementById("removeDate").checked;
   let removeMostCommon = document.getElementById("removeMostCommon").checked;
   
-  // Формирование полных строк боёв
+  // Формируем полные строки боёв
   for (let match of battleMatches) {
     let warId = match[1];
     let secretCode = match[2] || "";
     let [day, month, year, time] = match[3].split(/[- ]/);
     let formattedDateTime = `${year}-${month}-${day} ${time}`;
     let participantsRaw = match[4].trim();
-    
+  
     let sides = participantsRaw.split(/\s+vs\s+/g);
     let sidesParsed = sides.map(side => extractPlayerNames(side));
     for (let side of sidesParsed) {
@@ -337,25 +337,25 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     }
     
     let sidesStatus = sides.map(side => side.includes("<b>") ? "[win]" : "[lose]");
-    
+  
     let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
     let battleLink = `https://${baseDomain}/warlog.php?warid=${warId}`;
     if (secretCode) battleLink += `&show=${secretCode}`;
     if (watchFromStart) battleLink += "&lt";
-    
+  
     let battleResult = `${formattedDateTime} ` +
       sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") +
       ` ${battleLink}`;
-    
+  
     battles.push({ dateTime: formattedDateTime, battleResult });
   }
   
   // Определяем основного игрока (самый частый ник)
-  let maxCount = 0;
+  let maxCountVal = 0;
   let mostCommonPlayer = "";
   for (let player in playerCounts) {
-    if (playerCounts[player] > maxCount) {
-      maxCount = playerCounts[player];
+    if (playerCounts[player] > maxCountVal) {
+      maxCountVal = playerCounts[player];
       mostCommonPlayer = player;
     }
   }
@@ -364,12 +364,15 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
   
   // Определяем базовое имя основного игрока (до символа "[")
   let playerSearchName = "";
-  for (let i = 0; i < mostCommonPlayer.length; i++) {
-    if (mostCommonPlayer[i] === "[") break;
-    playerSearchName += mostCommonPlayer[i];
+  if (mostCommonPlayer) {
+    for (let i = 0; i < mostCommonPlayer.length; i++) {
+      if (mostCommonPlayer[i] === "[") break;
+      playerSearchName += mostCommonPlayer[i];
+    }
   }
   
-  // Обработка строк для выделения результата основного игрока, удаление никнейма и т.п.
+  // Обработка строк боёв для выделения результата основного игрока.
+  // Этот этап не затрагивает опции "Удалить врагов" или "Удалить никнейм"
   battles = battles.map(battle => {
     let battleParts = battle.battleResult.split(" ");
     if (battleParts.length < 3) return battle;
@@ -402,12 +405,11 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     }
     if (playerResult === null) return battle;
     let separator = (removeMostCommon && newParts.length > 1) ? ", " : " vs ";
-    // Собираем строку без применения опции "Удалить врагов" (она будет обработана позже)
     let fullBattle = `${dateTime} ${playerResult} ${newParts.join(separator)} ${battleLink}`.trim();
     return { ...battle, battleResult: fullBattle };
   });
   
-  // Сортировка боёв
+  // Сортировка боёв по дате
   let sortAscending = document.getElementById("sortAscending").checked;
   battles.sort((a, b) => sortAscending ? a.dateTime.localeCompare(b.dateTime) : b.dateTime.localeCompare(a.dateTime));
   
@@ -467,24 +469,20 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     });
   }
   
-  // После всех преобразований применяем финальный шаг для опции "Удалить врагов"
+  // Финальный шаг: если выбрана опция "Удалить врагов", выполняем преобразование строки
   let removeEnemies = document.getElementById("removeEnemies") && document.getElementById("removeEnemies").checked;
   if (removeEnemies) {
-    // Ожидаемый формат полной строки: "date result sides battleLink"
     battles = battles.map(battle => {
-      // Используем регулярное выражение, чтобы разбить строку на части:
-      // группа 1: дата (два слова)
-      // группа 2: результат ([win!] или [lose])
-      // группа 3: оставшаяся часть (список сторон)
-      // группа 4: ссылка (начинается с http)
+      // Ожидаем формат: "Дата Result Sides BattleLink"
+      // Разбиваем строку с помощью регулярного выражения
       let m = battle.battleResult.match(/^(\S+\s+\S+)\s+(\[win!\]|\[lose\])\s+(.*)\s+(https?:\/\/\S+)$/);
       if (m) {
         let dt = m[1], res = m[2], sidesText = m[3], link = m[4];
         if (removeMostCommon) {
-          // Если удаляются и никнейм, то убираем всю информацию о сторонах.
+          // Если выбраны обе опции "Удалить никнейм" и "Удалить врагов", оставляем дату, результат и ссылку
           return `${dt} ${res} ${link}`.trim();
         } else {
-          // Иначе остаётся только сторона основного игрока
+          // Если удаляются только враги, остаётся дата, результат и только сторона основного игрока
           let sidesArray = sidesText.split(/\s+vs\s+/);
           let playerSide = sidesArray.find(side => side.includes(playerSearchName)) || mostCommonPlayer;
           return `${dt} ${res} ${playerSide} ${link}`.trim();
@@ -494,8 +492,8 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     });
   }
   
-  // Финальное формирование строк
-  battles = battles.map(b => b.battleResult);
+  // Финальная обработка строк
+  battles = battles.map(b => (b && b.battleResult) ? b.battleResult : "").filter(b => b);
   battles = battles.map(b => b.replace(/,\s+vs/g, " vs").trim());
   battles = battles.filter(b => b.trim().length > 0);
   
