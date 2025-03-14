@@ -181,7 +181,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-005</h2>
+  <h2>Парсер боёв v2-006</h2>
 
   <div id="inputContainer">
     <!-- Блок FAQ с вопросами и ответами -->
@@ -360,12 +360,11 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
       mostCommonPlayer = player;
     }
   }
-  // Выводим найденного основного игрока в заголовок результата
+  // Выводим основного игрока в заголовок результата
   document.getElementById("resultTitle").textContent = mostCommonPlayer;
   console.log("mostCommonPlayer", mostCommonPlayer);
   
-  // Обработка сторон для определения результата основного игрока.
-  // Для сопоставления используем базовое имя (до первого символа "[")
+  // Обработка строк боёв для определения результата основного игрока.
   if (mostCommonPlayer) {
     let basePlayerName = "";
     for (let i = 0; i < mostCommonPlayer.length; i++) {
@@ -384,7 +383,6 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
       let battleLink = "";
       let newParts = [];
       
-      // Проходим по каждой стороне
       for (let side of parts) {
         side = side.trim();
         // Если присутствует ссылка, отделяем её
@@ -398,6 +396,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             playerResult = side.includes("[win]") ? "[win]" : "[lose]";
           }
           if (!removeMostCommon) {
+            // Сохраняем сторону с никнеймом основного игрока
             side = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
             newParts.push(side);
           }
@@ -408,13 +407,20 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
       }
       if (playerResult === null) return battle;
       
-      // Получаем значение опции "Удалить врагов" (но отложим её применение до самого конца)
+      // Если опция "Удалить врагов" активна, оставляем только дату, результат и сторону основного игрока.
       let removeEnemies = document.getElementById("removeEnemies") && document.getElementById("removeEnemies").checked;
+      let playerSide;
+      if (!removeMostCommon) {
+        // Если никнейм не удаляется, ищем сторону, содержащую имя основного игрока
+        playerSide = newParts.find(side => side.includes(playerSearchName)) || "";
+      } else {
+        // Иначе берём полное имя основного игрока из mostCommonPlayer
+        playerSide = mostCommonPlayer;
+      }
       
       let newBattle;
       if (removeEnemies) {
-        // Если опция активна, оставляем только ссылку на бой
-        newBattle = battleLink;
+        newBattle = `${dateTime} ${playerResult} ${playerSide} ${battleLink}`.trim();
       } else {
         let separator = (removeMostCommon && newParts.length > 1) ? ", " : " vs ";
         newBattle = `${dateTime} ${playerResult} ${newParts.join(separator)} ${battleLink}`.trim();
