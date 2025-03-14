@@ -181,7 +181,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-002</h2>
+  <h2>Парсер боёв v2-003</h2>
 
   <div id="inputContainer">
     <!-- Блок FAQ с вопросами и ответами -->
@@ -306,193 +306,203 @@
     }
   
     function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
-      html = cleanSpecialSymbols(html);
-      html = html.replace(/&nbsp;/g, ' ');
-      let playerCounts = {}; // Подсчитываем, сколько раз встречается каждый ник
-      let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([\w\-]+))?[^>]*>\s*(\d{2}-\d{2}-\d{2}\s+\d{2}:\d{2})\s*<\/a>\s*:\s*([\s\S]*?)<!--\d+-->/gi)];
-      
-      let battles = [];
-      let useLordswm = document.getElementById('useLordswm').checked;
-      let removeDate = document.getElementById("removeDate").checked;
-      let removeMostCommon = document.getElementById("removeMostCommon").checked;
-      
-      // Формируем базовый массив боёв
-      for (let match of battleMatches) {
-        let warId = match[1];
-        let secretCode = match[2] || "";
-        let [day, month, year, time] = match[3].split(/[- ]/);
-        let formattedDateTime = `${year}-${month}-${day} ${time}`;
-        let participantsRaw = match[4].trim();
+  html = cleanSpecialSymbols(html);
+  html = html.replace(/&nbsp;/g, ' ');
+  let playerCounts = {}; // Подсчитываем, сколько раз встречается каждый ник
+  let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([\w\-]+))?[^>]*>\s*(\d{2}-\d{2}-\d{2}\s+\d{2}:\d{2})\s*<\/a>\s*:\s*([\s\S]*?)<!--\d+-->/gi)];
   
-        let sides = participantsRaw.split(/\s+vs\s+/g);
-        let sidesParsed = sides.map(side => extractPlayerNames(side));
-        // Подсчитываем частоту никнеймов
-        for (let side of sidesParsed) {
-          for (let playerName of side) {
-            if (!playerCounts[playerName]) {
-              playerCounts[playerName] = 0;
-            }
-            playerCounts[playerName]++;
-          }
-        }
-        
-        // Определяем статус каждой стороны по наличию тега <b>
-        let sidesStatus = sides.map(side => side.includes("<b>") ? "[win]" : "[lose]");
+  let battles = [];
+  let useLordswm = document.getElementById('useLordswm').checked;
+  let removeDate = document.getElementById("removeDate").checked;
+  let removeMostCommon = document.getElementById("removeMostCommon").checked;
   
-        let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
-        let battleLink = `https://${baseDomain}/warlog.php?warid=${warId}`;
-        if (secretCode) battleLink += `&show=${secretCode}`;
-        if (watchFromStart) battleLink += "&lt";
-  
-        let battleResult = `${formattedDateTime} ` +
-            sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
-  
-        battles.push({ dateTime: formattedDateTime, battleResult });
-      }
-      
-      // Определяем основного игрока (самый частый ник)
-      let maxCount = 0;
-      let mostCommonPlayer = "";
-      for (let player in playerCounts) {
-        if (playerCounts[player] > maxCount) {
-          maxCount = playerCounts[player];
-          mostCommonPlayer = player;
+  // Формируем базовый массив боёв
+  for (let match of battleMatches) {
+    let warId = match[1];
+    let secretCode = match[2] || "";
+    let [day, month, year, time] = match[3].split(/[- ]/);
+    let formattedDateTime = `${year}-${month}-${day} ${time}`;
+    let participantsRaw = match[4].trim();
+
+    let sides = participantsRaw.split(/\s+vs\s+/g);
+    let sidesParsed = sides.map(side => extractPlayerNames(side));
+    // Подсчитываем частоту никнеймов
+    for (let side of sidesParsed) {
+      for (let playerName of side) {
+        if (!playerCounts[playerName]) {
+          playerCounts[playerName] = 0;
         }
+        playerCounts[playerName]++;
       }
-      // Выводим найденного основного игрока в заголовок результата
-      document.getElementById("resultTitle").textContent = mostCommonPlayer;
-      console.log("mostCommonPlayer", mostCommonPlayer);
-      
-      // Определяем результат (победа/поражение) основного игрока во всех боях.
-      // Для сопоставления используем базовое имя (до первого символа "[")
-      if (mostCommonPlayer) {
-        let basePlayerName = "";
-        for (let i = 0; i < mostCommonPlayer.length; i++) {
-          if (mostCommonPlayer[i] === "[") break;
-          basePlayerName += mostCommonPlayer[i];
-        }
-        let playerSearchName = basePlayerName;
-        
-        // Получаем значение новой опции "Удалить врагов"
-        let removeEnemies = document.getElementById("removeEnemies") && document.getElementById("removeEnemies").checked;
-        
-        battles = battles.map(battle => {
-          let battleParts = battle.battleResult.split(" ");
-          if (battleParts.length < 3) return battle; // Если формат не соответствует
-          let dateTime = battleParts.slice(0, 2).join(" ");
-          let resultPart = battleParts.slice(2).join(" ");
-          let parts = resultPart.split(" vs ");
-          let playerResult = null;
-          let battleLink = "";
-          let newParts = [];
-          
-          // Если опция "Удалить врагов" активна, оставляем только стороны с именем основного игрока.
-          if (removeEnemies) {
-            parts = parts.filter(side => side.includes(playerSearchName));
-          }
-          
-          for (let side of parts) {
-            side = side.trim();
-            // Если присутствует ссылка, отделяем её
-            let linkStart = side.indexOf("http");
-            if (linkStart !== -1) {
-              battleLink = side.slice(linkStart);
-              side = side.slice(0, linkStart).trim();
-            }
-            if (side.includes(playerSearchName)) {
-              // Определяем результат основного игрока (берём из первого найденного)
-              if (!playerResult) {
-                playerResult = side.includes("[win]") ? "[win]" : "[lose]";
-              }
-              // Если опция "Удалить никнейм" НЕ включена, добавляем эту сторону (очищая маркер)
-              if (!removeMostCommon) {
-                side = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
-                newParts.push(side);
-              }
-            } else {
-              let cleanSide = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
-              newParts.push(cleanSide);
-            }
-          }
-          if (playerResult === null) return battle;
-          let separator = (removeMostCommon && newParts.length > 1) ? ", " : " vs ";
-          let newBattle = `${dateTime} ${playerResult} ${newParts.join(separator)} ${battleLink}`.trim();
-          return { ...battle, battleResult: newBattle };
-        });
-      }
-      
-      // Сортировка боёв по дате
-      let sortAscending = document.getElementById("sortAscending").checked;
-      battles.sort((a, b) => sortAscending ? a.dateTime.localeCompare(b.dateTime) : b.dateTime.localeCompare(a.dateTime));
-      
-      if (doFilter && filters.length > 0) {
-        battles = battles.filter(battle =>
-          filters.some(filterText => battle.battleResult.includes(filterText))
-        );
-      }
-      
-      // Если выбрана нумерация, добавляем её
-      let numberBattles = document.getElementById("numberBattles").checked;
-      let startNumber = parseInt(document.getElementById("startNumber").value, 10) || 1;
-      if (numberBattles) {
-        let winCount = startNumber;
-        let maxWidth = (winCount + battles.length).toString().length;
-        let foundNumbering = false;
-        // Сортируем бои по дате от старых к новым
-        battles.sort((a, b) => a.dateTime.localeCompare(b.dateTime));
-        for (let i = 0; i < battles.length; i++) {
-          if (battles[i].battleResult.includes("[win]")) {
-            let formattedNumber = winCount.toString().padStart(maxWidth, "0");
-            battles[i].battleResult = `(${formattedNumber}) ` + battles[i].battleResult;
-            winCount++;
-            foundNumbering = true;
-          } else if (battles[i].battleResult.includes("[lose]")) {
-            let minusString = "-".repeat(maxWidth);
-            battles[i].battleResult = `(${minusString}) ` + battles[i].battleResult;
-            foundNumbering = true;
-          }
-        }
-        if (!foundNumbering) {
-          console.error("❌ Ошибка: номера не были добавлены!");
-        } else {
-          console.log("✅ Номера успешно добавлены.");
-        }
-        if (!sortAscending) {
-          battles.reverse();
-        }
-      }
-  
-      // Опция "Удалить дату и время после сортировки"
-      if (removeDate) {
-        battles = battles.map(battle => {
-          let newResult = battle.battleResult;
-          if (newResult.startsWith("(")) {
-            newResult = newResult.replace(/^(\(\d+\)|\(-+\)) \d{2}-\d{2}-\d{2} \d{2}:\d{2} /, "$1 ");
-          } else {
-            newResult = newResult.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, "");
-          }
-          return { ...battle, battleResult: newResult };
-        });
-      }
-      
-      battles = battles.map(battle => battle.battleResult);
-      battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim());
-      battles = battles.filter(battle => battle.trim().length > 0);
-      
-      // Заменяем маркер [win] на [win!]
-      battles = battles.map(battle => battle.replace("[win]", "[win!]"));
-      if (onlyWins) {
-        battles = battles.filter(battle => battle.includes("[win!]"));
-        battles = battles.map(battle => battle.replace("[win!]", "").replace(/\s{2,}/g, " ").trim());
-      }
-      
-      let includeAd = document.getElementById("includeAd").checked;
-      if (includeAd) {
-        let currentURL = window.location.href;
-        battles.push(`\nСписок боев сгенерирован здесь: ${currentURL}`);
-      }
-      return battles.join("\n");
     }
+    
+    // Определяем статус каждой стороны по наличию тега <b>
+    let sidesStatus = sides.map(side => side.includes("<b>") ? "[win]" : "[lose]");
+    
+    let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
+    let battleLink = `https://${baseDomain}/warlog.php?warid=${warId}`;
+    if (secretCode) battleLink += `&show=${secretCode}`;
+    if (watchFromStart) battleLink += "&lt";
+
+    let battleResult = `${formattedDateTime} ` +
+        sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
+
+    battles.push({ dateTime: formattedDateTime, battleResult });
+  }
+  
+  // Определяем основного игрока (самый частый ник)
+  let maxCount = 0;
+  let mostCommonPlayer = "";
+  for (let player in playerCounts) {
+    if (playerCounts[player] > maxCount) {
+      maxCount = playerCounts[player];
+      mostCommonPlayer = player;
+    }
+  }
+  // Выводим найденного основного игрока в заголовок результата
+  document.getElementById("resultTitle").textContent = mostCommonPlayer;
+  console.log("mostCommonPlayer", mostCommonPlayer);
+  
+  // Обработка сторон боя для определения результата основного игрока.
+  // Для сопоставления используем базовое имя (до первого символа "[")
+  if (mostCommonPlayer) {
+    let basePlayerName = "";
+    for (let i = 0; i < mostCommonPlayer.length; i++) {
+      if (mostCommonPlayer[i] === "[") break;
+      basePlayerName += mostCommonPlayer[i];
+    }
+    let playerSearchName = basePlayerName;
+    
+    // Получаем значение опции "Удалить врагов"
+    let removeEnemies = document.getElementById("removeEnemies") && document.getElementById("removeEnemies").checked;
+    
+    battles = battles.map(battle => {
+      let battleParts = battle.battleResult.split(" ");
+      if (battleParts.length < 3) return battle; // Если формат не соответствует
+      let dateTime = battleParts.slice(0, 2).join(" ");
+      let resultPart = battleParts.slice(2).join(" ");
+      let parts = resultPart.split(" vs ");
+      let playerResult = null;
+      let battleLink = "";
+      let newParts = [];
+      
+      // Проходим по каждой стороне
+      for (let side of parts) {
+        side = side.trim();
+        // Если присутствует ссылка, отделяем её
+        let linkStart = side.indexOf("http");
+        if (linkStart !== -1) {
+          battleLink = side.slice(linkStart);
+          side = side.slice(0, linkStart).trim();
+        }
+        if (side.includes(playerSearchName)) {
+          if (!playerResult) {
+            playerResult = side.includes("[win]") ? "[win]" : "[lose]";
+          }
+          if (!removeMostCommon) {
+            side = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
+            newParts.push(side);
+          }
+          // Если удаляется никнейм, то не добавляем эту сторону (так как результат уже выводится отдельно)
+        } else {
+          // Добавляем остальные стороны (если опция "Удалить врагов" не активна)
+          let cleanSide = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
+          newParts.push(cleanSide);
+        }
+      }
+      if (playerResult === null) return battle;
+      let newBattle;
+      if (removeEnemies) {
+        // Если опция "Удалить врагов" активна, оставляем только дату, результат и ссылку
+        newBattle = `${dateTime} ${playerResult} ${battleLink}`.trim();
+      } else {
+        let separator = (removeMostCommon && newParts.length > 1) ? ", " : " vs ";
+        newBattle = `${dateTime} ${playerResult} ${newParts.join(separator)} ${battleLink}`.trim();
+      }
+      return { ...battle, battleResult: newBattle };
+    });
+  }
+  
+  // Сортировка боёв по дате
+  let sortAscending = document.getElementById("sortAscending").checked;
+  battles.sort((a, b) => sortAscending ? a.dateTime.localeCompare(b.dateTime) : b.dateTime.localeCompare(a.dateTime));
+  
+  if (doFilter && filters.length > 0) {
+    battles = battles.filter(battle =>
+      filters.some(filterText => battle.battleResult.includes(filterText))
+    );
+  }
+  
+  // Если выбрана нумерация, добавляем её
+  let numberBattles = document.getElementById("numberBattles").checked;
+  let startNumber = parseInt(document.getElementById("startNumber").value, 10) || 1;
+  if (numberBattles) {
+    let winCount = startNumber;
+    let maxWidth = (winCount + battles.length).toString().length;
+    // Если опция "Удалить врагов" активна, номера добавляем просто к строке,
+    // иначе используем существующую логику, основанную на маркере [win] или [lose]
+    if (document.getElementById("removeEnemies") && document.getElementById("removeEnemies").checked) {
+      for (let i = 0; i < battles.length; i++) {
+        let formattedNumber = (winCount + i).toString().padStart(maxWidth, "0");
+        battles[i].battleResult = `(${formattedNumber}) ` + battles[i].battleResult;
+      }
+    } else {
+      let foundNumbering = false;
+      for (let i = 0; i < battles.length; i++) {
+        if (battles[i].battleResult.includes("[win]")) {
+          let formattedNumber = winCount.toString().padStart(maxWidth, "0");
+          battles[i].battleResult = `(${formattedNumber}) ` + battles[i].battleResult;
+          winCount++;
+          foundNumbering = true;
+        } else if (battles[i].battleResult.includes("[lose]")) {
+          let minusString = "-".repeat(maxWidth);
+          battles[i].battleResult = `(${minusString}) ` + battles[i].battleResult;
+          foundNumbering = true;
+        }
+      }
+      if (!foundNumbering) {
+        console.error("❌ Ошибка: номера не были добавлены!");
+      } else {
+        console.log("✅ Номера успешно добавлены.");
+      }
+    }
+    if (!sortAscending) {
+      battles.reverse();
+    }
+  }
+  
+  // Опция "Удалить дату и время после сортировки"
+  if (removeDate) {
+    battles = battles.map(battle => {
+      let newResult = battle.battleResult;
+      if (newResult.startsWith("(")) {
+        newResult = newResult.replace(/^(\(\d+\)|\(-+\)) \d{2}-\d{2}-\d{2} \d{2}:\d{2} /, "$1 ");
+      } else {
+        newResult = newResult.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, "");
+      }
+      return { ...battle, battleResult: newResult };
+    });
+  }
+  
+  battles = battles.map(battle => battle.battleResult);
+  battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim());
+  battles = battles.filter(battle => battle.trim().length > 0);
+  
+  // Для фильтрации выигрышей заменяем маркер [win] на [win!]
+  battles = battles.map(battle => battle.replace("[win]", "[win!]"));
+  if (onlyWins) {
+    battles = battles.filter(battle => battle.includes("[win!]"));
+    battles = battles.map(battle => battle.replace("[win!]", "").replace(/\s{2,}/g, " ").trim());
+  }
+  
+  let includeAd = document.getElementById("includeAd").checked;
+  if (includeAd) {
+    let currentURL = window.location.href;
+    battles.push(`\nСписок боев сгенерирован здесь: ${currentURL}`);
+  }
+  return battles.join("\n");
+}
+
   
     function extractPlayerNames(text) {
       let cleanedText = text.replace(/<[^>]+>/g, '').trim();
