@@ -182,7 +182,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-002</h2>
+  <h2>Парсер боёв v2-003</h2>
 
   <div id="inputContainer">
     <!-- Блок FAQ с вопросами и ответами -->
@@ -310,8 +310,7 @@
       html = html.replace(/&nbsp;/g, ' ');
       let playerCounts = {}; // Подсчитываем, сколько раз встречается каждый ник
       let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9\-]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*([\s\S]*?)<!--\d+-->/g)];
-      //let battleMatches = [...matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9\-]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*([\s\S]*?)<!--\d+-->/g)
-];
+      //let battleMatches = [...matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9\-]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*([\s\S]*?)<!--\d+-->/g)];
       
       let battles = [];
       let useLordswm = document.getElementById('useLordswm').checked;
