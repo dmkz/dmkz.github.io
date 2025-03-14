@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v42-002</h2>
+    <h2>Парсер боёв v42-003</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -255,7 +255,6 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
             if (mostCommonPlayer[i] === "[") break;
             basePlayerName += mostCommonPlayer[i];
         }
-        // Всегда используем базовое имя для поиска, чтобы матчились и бои с разными уровнями
         let playerSearchName = basePlayerName;
         
         battles = battles.map(battle => {
@@ -279,17 +278,17 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
                 // Если в стороне найден базовый ник основного игрока
                 if (side.includes(playerSearchName)) {
                     playerResult = side.includes("[win]") ? "[win]" : "[lose]";
-                    // Если выбрана опция "Удалить никнейм", удаляем базовое имя
                     if (removeMostCommon) {
                         side = side.replace(playerSearchName, "").trim();
                     }
+                    // Удаляем дублирующийся маркер [win] или [lose] из этой стороны
+                    side = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
                     newParts.push(side);
                 } else {
-                    // Для остальных сторон удаляем метки побед/поражений
+                    // Для остальных сторон удаляем маркеры побед/поражений
                     newParts.push(side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim());
                 }
             }
-            // Если основной игрок не найден, оставляем строку без изменений
             if (playerResult === null) return battle;
             let newBattle = `${dateTime} ${playerResult} ${newParts.join(" vs ")} ${battleLink}`.trim();
             return { ...battle, battleResult: newBattle };
@@ -356,9 +355,8 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     // Для фильтрации выигрышей заменяем маркер [win] на [win!]
     battles = battles.map(battle => battle.replace("[win]", "[win!]"));
     if (onlyWins) {
-        // Фильтруем только победные бои...
         battles = battles.filter(battle => battle.includes("[win!]"));
-        // ...и затем удаляем маркер, так как он становится избыточным
+        // Убираем маркер, так как он теперь избыточен
         battles = battles.map(battle => battle.replace("[win!]", "").trim());
     }
     
