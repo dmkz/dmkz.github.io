@@ -182,7 +182,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2</h2>
+  <h2>Парсер боёв v2-001</h2>
 
   <div id="inputContainer">
     <!-- Блок FAQ с вопросами и ответами -->
@@ -309,7 +309,7 @@
       html = cleanSpecialSymbols(html);
       html = html.replace(/&nbsp;/g, ' ');
       let playerCounts = {}; // Подсчитываем, сколько раз встречается каждый ник
-      let battleMatches = [...matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9\-]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*(.*?)<!--\d+-->/gs)
+      let battleMatches = [...matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9\-]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*([\s\S]*?)<!--\d+-->/g)
 ];
       
       let battles = [];
