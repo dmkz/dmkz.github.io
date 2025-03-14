@@ -309,7 +309,7 @@
       html = cleanSpecialSymbols(html);
       html = html.replace(/&nbsp;/g, ' ');
       let playerCounts = {}; // Подсчитываем, сколько раз встречается каждый ник
-      let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*(.*?)<!--\d+-->/gs)];
+      let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([\w\-]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*([\s\S]*?)<!--\d+-->/g)];
       
       let battles = [];
       let useLordswm = document.getElementById('useLordswm').checked;
