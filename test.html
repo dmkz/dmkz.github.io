@@ -102,7 +102,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v42-003</h2>
+    <h2>Парсер боёв v42-004</h2>
 <div id="inputContainer">
     <div class="container">
         <div class="half">
@@ -248,7 +248,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     console.log("mostCommonPlayer", mostCommonPlayer);
     
     // Определяем результат (победа/поражение) основного игрока во всех боях.
-    // Для сопоставления всегда используем базовое имя (до первого символа "[")
+    // Для сопоставления используем базовое имя (до первого символа "[")
     if (mostCommonPlayer) {
         let basePlayerName = "";
         for (let i = 0; i < mostCommonPlayer.length; i++) {
@@ -275,18 +275,20 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
                     battleLink = side.slice(linkStart);
                     side = side.slice(0, linkStart).trim();
                 }
-                // Если в стороне найден базовый ник основного игрока
                 if (side.includes(playerSearchName)) {
+                    // Определяем результат основного игрока
                     playerResult = side.includes("[win]") ? "[win]" : "[lose]";
-                    if (removeMostCommon) {
-                        side = side.replace(playerSearchName, "").trim();
+                    // Если опция "Удалить никнейм" включена, не добавляем эту сторону вовсе
+                    if (!removeMostCommon) {
+                        // Если не удаляем никнейм, убираем повторяющиеся маркеры
+                        side = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
+                        newParts.push(side);
                     }
-                    // Удаляем дублирующийся маркер [win] или [lose] из этой стороны
-                    side = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
-                    newParts.push(side);
+                    // Если удаляем никнейм, просто пропускаем добавление этой стороны
                 } else {
                     // Для остальных сторон удаляем маркеры побед/поражений
-                    newParts.push(side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim());
+                    let cleanSide = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
+                    newParts.push(cleanSide);
                 }
             }
             if (playerResult === null) return battle;
@@ -336,18 +338,22 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
         }
     }
 
-    // Если выбрана опция "Удалить дату", удаляем дату после нумерации
+    // Опция "Удалить дату и время после сортировки"
     if (removeDate) {
-        battles = battles.map(battle => ({
-            ...battle,
-            battleResult: battle.battleResult.replace(
-                /^(\(\d+\)|\(-+\)) \d{2}-\d{2}-\d{2} \d{2}:\d{2} /,
-                "$1 "
-            )
-        }));
+        battles = battles.map(battle => {
+            let newResult = battle.battleResult;
+            // Если строка начинается с нумерации, сохраняем её, удаляя только дату/время
+            if (newResult.startsWith("(")) {
+                newResult = newResult.replace(/^(\(\d+\)|\(-+\)) \d{2}-\d{2}-\d{2} \d{2}:\d{2} /, "$1 ");
+            } else {
+                // Если нумерации нет, удаляем дату/время полностью
+                newResult = newResult.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, "");
+            }
+            return { ...battle, battleResult: newResult };
+        });
     }
     
-    // Преобразуем объекты в строки и убираем лишние запятые
+    // Преобразуем объекты в строки, убираем лишние запятые и корректируем лишние пробелы
     battles = battles.map(battle => battle.battleResult);
     battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim());
     battles = battles.filter(battle => battle.trim().length > 0);
@@ -356,8 +362,8 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     battles = battles.map(battle => battle.replace("[win]", "[win!]"));
     if (onlyWins) {
         battles = battles.filter(battle => battle.includes("[win!]"));
-        // Убираем маркер, так как он теперь избыточен
-        battles = battles.map(battle => battle.replace("[win!]", "").trim());
+        // Убираем маркер [win!] и заменяем несколько пробелов одним, чтобы не оставалось лишнего
+        battles = battles.map(battle => battle.replace("[win!]", "").replace(/\s{2,}/g, " ").trim());
     }
     
     let includeAd = document.getElementById("includeAd").checked;
