@@ -181,7 +181,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-010</h2>
+  <h2>Парсер боёв v2-011</h2>
 
   <div id="inputContainer">
     <!-- Блок FAQ с вопросами и ответами -->
@@ -371,8 +371,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     }
   }
   
-  // Обработка строк боёв для выделения результата основного игрока.
-  // Этот этап не затрагивает опции "Удалить врагов" или "Удалить никнейм"
+  // Обработка строк боёв для выделения информации об основном игроке
   battles = battles.map(battle => {
     let battleParts = battle.battleResult.split(" ");
     if (battleParts.length < 3) return battle;
@@ -413,7 +412,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
   let sortAscending = document.getElementById("sortAscending").checked;
   battles.sort((a, b) => sortAscending ? a.dateTime.localeCompare(b.dateTime) : b.dateTime.localeCompare(a.dateTime));
   
-  // Фильтрация боёв (например, "Выбрать бои с ивента")
+  // Фильтрация (например, "Выбрать бои с ивента")
   if (doFilter && filters.length > 0) {
     battles = battles.filter(battle =>
       filters.some(filterText => battle.battleResult.includes(filterText))
@@ -469,20 +468,24 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     });
   }
   
-  // Финальный шаг: если выбрана опция "Удалить врагов", выполняем преобразование строки
+  // Финальный шаг: если выбрана опция "Удалить врагов", преобразуем строку,
+  // оставляя только нужную информацию.
   let removeEnemies = document.getElementById("removeEnemies") && document.getElementById("removeEnemies").checked;
   if (removeEnemies) {
     battles = battles.map(battle => {
-      // Ожидаем формат: "Дата Result Sides BattleLink"
-      // Разбиваем строку с помощью регулярного выражения
-      let m = battle.battleResult.match(/^(\S+\s+\S+)\s+(\[win!\]|\[lose\])\s+(.*)\s+(https?:\/\/\S+)$/);
+      // Используем более гибкое регулярное выражение:
+      // Группа 1: дата (любые символы до первого пробела, затем пробел и далее до пробела)
+      // Группа 2: результат ([win!] или [lose])
+      // Группа 3: оставшаяся часть (содержит список сторон)
+      // Группа 4: ссылка, начиная с http
+      let m = battle.battleResult.match(/^(.+?)\s+(\[win!\]|\[lose\])\s+(.*?)\s+(https?:\/\/\S+)\s*$/);
       if (m) {
         let dt = m[1], res = m[2], sidesText = m[3], link = m[4];
         if (removeMostCommon) {
-          // Если выбраны обе опции "Удалить никнейм" и "Удалить врагов", оставляем дату, результат и ссылку
+          // Если выбраны обе опции "Удалить никнейм" и "Удалить врагов" – оставляем дату, результат и ссылку
           return `${dt} ${res} ${link}`.trim();
         } else {
-          // Если удаляются только враги, остаётся дата, результат и только сторона основного игрока
+          // Если удаляются только враги, оставляем дату, результат и только ту сторону, где содержится имя нашего игрока
           let sidesArray = sidesText.split(/\s+vs\s+/);
           let playerSide = sidesArray.find(side => side.includes(playerSearchName)) || mostCommonPlayer;
           return `${dt} ${res} ${playerSide} ${link}`.trim();
@@ -511,6 +514,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
   }
   return battles.join("\n");
 }
+
 
 
   
