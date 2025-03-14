@@ -1,194 +1,225 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Парсер боёв</title>
-    <style>
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* Центрирование кнопки */
-            gap: 5px;
-            width: 100%; /* Чтобы кнопка была по ширине поля */
-        }
-
-        .clear-btn {
-            width: 50%; /* Опционально: можно изменить ширину кнопки */
-            text-align: center; /* Убедимся, что текст в кнопке тоже по центру */
-        }
-        
-        button {
-            background-color: #007bff; /* Синий цвет кнопок */
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 14px;
-            transition: background-color 0.3s ease, transform 0.1s ease;
-        }
-
-        button:hover {
-            background-color: #0056b3; /* Темно-синий при наведении */
-        }
-
-        button:active {
-            transform: scale(0.95); /* Эффект нажатия */
-        }
-
-
-        /* Скрытая кнопка "Развернуть настройки" */
-        #toggleButton {
-            display: none;
-            background-color: #6c757d; /* Серый */
-        }
-
-        #toggleButton:hover {
-            background-color: #5a6268;
-        }
-
-        .clear-btn {
-            background-color: #ff4d4d;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .clear-btn:hover {
-            background-color: #cc0000;
-        }
-        @media (max-width: 600px) {
-            .container {
-                flex-direction: column; /* Разместить блоки один под другим */
-            }
-            .half {
-                width: 100%; /* Растянуть блоки на всю ширину */
-            }
-            textarea {
-                height: 150px; /* Сделать текстовые поля выше для удобства */
-            }
-        }
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: auto;
-            padding: 20px;
-            text-align: center;
-        }
-        textarea {
-            width: 100%;
-            height: 100px;
-            margin-bottom: 10px;
-        }
-        .options {
-            text-align: left;
-            margin-bottom: 10px;
-        }
-        .container {
-            display: flex;
-            gap: 20px;
-        }
-        .half {
-            flex: 1;
-        }
-        #result {
-            text-align: left; /* Выравнивание текста по левому краю */
-            white-space: pre-wrap; /* Перенос строк внутри <pre> */
-        }
-        /* Контейнер FAQ занимает 100% ширины и располагает блоки в один ряд */
-          #faq {
-            display: flex;
-            gap: 20px;
-            width: 100%;
-            box-sizing: border-box;
-          }
-          /* На мобильных устройствах располагаем блоки вертикально */
-          @media (max-width: 600px) {
-            #faq {
-              flex-direction: column;
-            }
-          }
-          /* Каждый блок FAQ оформлен как прямоугольник с закругленными краями */
-          .faq-item {
-            flex: 1 1 48%;
-            padding: 15px;
-            background: #fff;
-            border-radius: 10px;
-            border: 2px solid;
-            box-sizing: border-box;
-          }
-          /* Зеленый блок для первого вопроса */
-          .faq-item.green {
-            border-color: #4CAF50;
-            color: #4CAF50;
-          }
-          /* Красный блок для второго вопроса */
-          .faq-item.red {
-            border-color: #F44336;
-            color: #F44336;
-          }
-          /* Заголовок блока – даёт понять, что по нему можно кликнуть */
-          .faq-item summary {
-            font-weight: bold;
-            cursor: pointer;
-          }
-          /* Ссылки наследуют цвет и подчёркивание */
-          .faq-item a {
-            color: inherit;
-            text-decoration: underline;
-          }
-          /* Параграфы с отступами и выравниванием текста по ширине */
-          .faq-item p {
-            margin: 10px 0 0 0;
-            text-align: justify;
-          }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Парсер боёв</title>
+  <style>
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* Центрирование кнопки */
+      gap: 5px;
+      width: 100%; /* Чтобы кнопка была по ширине поля */
+    }
+    .clear-btn {
+      width: 50%; /* Опционально: можно изменить ширину кнопки */
+      text-align: center; /* Центрирование текста в кнопке */
+    }
+    button {
+      background-color: #007bff; /* Синий цвет кнопок по умолчанию */
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 14px;
+      transition: background-color 0.3s ease, transform 0.1s ease;
+    }
+    button:hover {
+      background-color: #0056b3; /* Темно-синий при наведении */
+    }
+    button:active {
+      transform: scale(0.95); /* Эффект нажатия */
+    }
+    /* Скрытая кнопка "Развернуть настройки" */
+    #toggleButton {
+      display: none;
+      background-color: #6c757d; /* Серый */
+    }
+    #toggleButton:hover {
+      background-color: #5a6268;
+    }
+    .clear-btn {
+      background-color: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    .clear-btn:hover {
+      background-color: #cc0000;
+    }
+    @media (max-width: 600px) {
+      .container {
+        flex-direction: column; /* Разместить блоки один под другим */
+      }
+      .half {
+        width: 100%; /* Растянуть блоки на всю ширину */
+      }
+      textarea {
+        height: 150px; /* Сделать текстовые поля выше для удобства */
+      }
+    }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      text-align: center;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      margin-bottom: 10px;
+    }
+    .options {
+      text-align: left;
+      margin-bottom: 10px;
+    }
+    .container {
+      display: flex;
+      gap: 20px;
+    }
+    .half {
+      flex: 1;
+    }
+    #result {
+      text-align: left; /* Выравнивание текста по левому краю */
+      white-space: pre-wrap; /* Перенос строк внутри <pre> */
+    }
+    /* Стили для FAQ */
+    #faq {
+      display: flex;
+      gap: 20px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    /* На мобильных устройствах располагаем блоки вертикально */
+    @media (max-width: 600px) {
+      #faq {
+        flex-direction: column;
+      }
+    }
+    .faq-item {
+      flex: 1 1 48%;
+      padding: 15px;
+      background: #fff;
+      border-radius: 10px;
+      border: 2px solid;
+      box-sizing: border-box;
+    }
+    .faq-item.green {
+      border-color: #4CAF50;
+      color: #4CAF50;
+    }
+    .faq-item.red {
+      border-color: #F44336;
+      color: #F44336;
+    }
+    .faq-item summary {
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .faq-item a {
+      color: inherit;
+      text-decoration: underline;
+    }
+    .faq-item p {
+      margin: 10px 0 0 0;
+      text-align: justify;
+    }
+    /* Стили для блока с результатом (верхний и нижний) */
+    /* Верхний блок с кнопкой и заголовком "Результат:" */
+    #result-header,
+    /* Нижний блок с кнопками */
+    #bottom-actions {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: flex-start;
+      margin: 10px 0;
+      gap: 10px;
+    }
+    /* На мобильных устройствах располагаем элементы вертикально */
+    @media (max-width: 600px) {
+      #result-header,
+      #bottom-actions {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+    /* Для элементов внутри этих блоков выравниваем текст по левому краю */
+    #result-header button,
+    #result-header h3,
+    #bottom-actions button {
+      text-align: left;
+    }
+    /* Общий стиль для кнопок (для блока результата) */
+    .action-btn {
+      /* По умолчанию синяя кнопка */
+      background-color: #007bff;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    /* Кнопка "Подняться наверх" – зеленая */
+    .scroll-btn {
+      background-color: #4CAF50;
+    }
+    .action-btn:hover {
+      opacity: 0.9;
+    }
+    /* Сброс отступов у заголовка результата */
+    #resultTitle {
+      margin: 0;
+    }
+  </style>
 </head>
 <body>
-    <h2>Парсер боёв v42-010</h2>
+  <h2>Парсер боёв v42-011</h2>
 
-<div id="inputContainer">
+  <div id="inputContainer">
     <!-- Блок FAQ с вопросами и ответами -->
-<div id="faq">
-  <details class="faq-item green">
-    <summary>Кто автор сайта?</summary>
-    <p>
-      Автор сайта — <a href="https://www.heroeswm.ru/pl_info.php?id=2829340" target="_blank" rel="noopener noreferrer">oxotnik102rus</a>. Если вы обнаружили ошибку или у вас есть идея для новой функции, напишите мне в личку.
-    </p>
-  </details>
-  
-  <details class="faq-item red">
-    <summary>Ты украдешь мои бои?</summary>
-    <p>
-      Нет. Код работает исключительно на стороне клиента и не передает никакую информацию на сервер, поэтому я не украду ваши бои.
-    </p>
-    <p>
-      Код размещен с помощью <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a> — платформы, которая не поддерживает серверный код, что обеспечивает безопасность ваших данных.
-    </p>
-    <p>
-      Если у вас возникают сомнения, вы можете посмотреть исходный код сайта в браузере или по <a href="https://github.com/dmkz/dmkz.github.io" target="_blank" rel="noopener noreferrer">ссылке</a>.
-    </p>
-  </details>
-</div>
+    <div id="faq">
+      <details class="faq-item green">
+        <summary>Кто автор сайта?</summary>
+        <p>
+          Автор сайта — <a href="https://www.heroeswm.ru/pl_info.php?id=2829340" target="_blank" rel="noopener noreferrer">oxotnik102rus</a>. Если вы обнаружили ошибку или у вас есть идея для новой функции, напишите мне в личку.
+        </p>
+      </details>
+      <details class="faq-item red">
+        <summary>Ты украдешь мои бои?</summary>
+        <p>
+          Нет. Код работает исключительно на стороне клиента и не передает никакую информацию на сервер, поэтому я не украду ваши бои.
+        </p>
+        <p>
+          Код размещен с помощью <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a> — платформы, которая не поддерживает серверный код, что обеспечивает безопасность ваших данных.
+        </p>
+        <p>
+          Если у вас возникают сомнения, вы можете посмотреть исходный код сайта в браузере или по <a href="https://github.com/dmkz/dmkz.github.io" target="_blank" rel="noopener noreferrer">ссылке</a>.
+        </p>
+      </details>
+    </div>
 
     <div class="container">
-        <div class="half">
-            <h3>Входные данные (HTML)</h3>
-<div class="input-group">
-    <textarea id="battleInput" placeholder="Вставьте HTML страницы с боями... 
+      <div class="half">
+        <h3>Входные данные (HTML)</h3>
+        <div class="input-group">
+          <textarea id="battleInput" placeholder="Вставьте HTML страницы с боями... 
 Можно вставить сразу несколько страниц. 
 Проще всего: откройте протокол боёв, нажмите CTRL+U, затем CTRL+A, CTRL+C и вставьте сюда (CTRL+V)."></textarea>
-    <button class="clear-btn" onclick="clearInput()">Очистить</button>
-</div>
-
+          <button class="clear-btn" onclick="clearInput()">Очистить</button>
         </div>
-        <div class="half">
-            <h3>Фильтр боёв</h3>
-            <textarea id="filterInput">Праздничные злодеи
+      </div>
+      <div class="half">
+        <h3>Фильтр боёв</h3>
+        <textarea id="filterInput">Праздничные злодеи
 Вражеский отряд
 Стражи серебра
 Враждебный отряд
@@ -200,415 +231,347 @@
 Хранители артефактов
 Враги портала
 Цель</textarea>
-        </div>
+      </div>
     </div>
     
     <div class="options">
-        <label><input type="checkbox" id="doFilter" checked> Выбрать бои с ивента</label><br>
-        <label><input type="checkbox" id="onlyWins"> Показывать только победы</label><br>
-        <label><input type="checkbox" id="watchFromStart" checked> Указывать на начало боя</label><br>
-        <label><input type="checkbox" id="removeDate"> Удалить дату и время после сортировки</label><br>
-        <label><input type="checkbox" id="removeMostCommon"> Удалить никнейм</label><br>
-        <label><input type="checkbox" id="useLordswm"> Использовать my.lordswm.com вместо www.heroeswm.ru</label><br>
-        <label>
-            <input type="checkbox" id="numberBattles"> Пронумеровать бои
-        </label>
-        <label>
-            Начальный номер:
-            <input type="number" id="startNumber" value="1" min="1">
-        </label><br>
-        <label>
-            <input type="checkbox" id="sortAscending"> Прямой порядок сортировки
-        </label><br>
-        <label>
-            <input type="checkbox" id="includeAd" checked> Добавить ссылку на генератор
-        </label><br>
+      <label><input type="checkbox" id="doFilter" checked> Выбрать бои с ивента</label><br>
+      <label><input type="checkbox" id="onlyWins"> Показывать только победы</label><br>
+      <label><input type="checkbox" id="watchFromStart" checked> Указывать на начало боя</label><br>
+      <label><input type="checkbox" id="removeDate"> Удалить дату и время после сортировки</label><br>
+      <label><input type="checkbox" id="removeMostCommon"> Удалить никнейм</label><br>
+      <label><input type="checkbox" id="useLordswm"> Использовать my.lordswm.com вместо www.heroeswm.ru</label><br>
+      <label>
+        <input type="checkbox" id="numberBattles"> Пронумеровать бои
+      </label>
+      <label>
+        Начальный номер:
+        <input type="number" id="startNumber" value="1" min="1">
+      </label><br>
+      <label>
+        <input type="checkbox" id="sortAscending"> Прямой порядок сортировки
+      </label><br>
+      <label>
+        <input type="checkbox" id="includeAd" checked> Добавить ссылку на генератор
+      </label><br>
     </div>
     
     <button onclick="processBattles()">Обработать</button>
-</div>
-
-<button id="toggleButton" onclick="toggleInput()" style="display: none;">Развернуть настройки</button>
-
-<!-- Верхний блок с кнопкой и заголовком -->
-<div id="result-header" class="flex-container">
-  <div class="half">
-    <button id="copyButtonTop" class="action-btn copy-btn" onclick="copyResult()">Скопировать результат</button>
   </div>
-  <div class="half">
+
+  <button id="toggleButton" onclick="toggleInput()" style="display: none;">Развернуть настройки</button>
+
+  <!-- Верхний блок с кнопкой и заголовком "Результат:" -->
+  <div id="result-header">
+    <button id="copyButtonTop" class="action-btn" onclick="copyResult()">Скопировать результат</button>
     <h3 id="resultTitle">Результат:</h3>
   </div>
-</div>
 
-    <pre id="result"></pre>
-<!-- Нижний блок с кнопками (при длинном результате) -->
-<div id="bottom-actions" class="flex-container">
-  <div class="half">
-    <button id="scrollTopButton" class="action-btn blue-btn" onclick="scrollToTop()">Подняться наверх</button>
+  <pre id="result"></pre>
+
+  <!-- Нижний блок с кнопками (при длинном результате) -->
+  <div id="bottom-actions">
+    <button id="scrollTopButton" class="action-btn scroll-btn" onclick="scrollToTop()">Подняться наверх</button>
+    <button id="copyButtonBottom" class="action-btn" onclick="copyResult()">Скопировать результат</button>
   </div>
-  <div class="half">
-    <button id="copyButtonBottom" class="action-btn copy-btn" onclick="copyResult()">Скопировать результат</button>
-  </div>
-</div>
 
-<style>
-  /* Контейнер для верхнего и нижнего блока, делённый на 2 равные части */
-  .flex-container {
-    display: flex;
-    width: 100%;
-    box-sizing: border-box;
-    margin: 10px 0;
-  }
-  .half {
-    width: 50%;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  /* На мобильных устройствах располагаем элементы вертикально */
-  @media (max-width: 600px) {
-    .flex-container {
-      flex-direction: column;
-      gap: 10px;
+  <script>
+    // Функция для плавного скролла наверх
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    .half {
-      width: 100%;
+  
+    function clearInput() {
+      document.getElementById("battleInput").value = "";
     }
-  }
-  /* Общий стиль для кнопок */
-  .action-btn {
-    color: #fff;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  /* Кнопка "Скопировать результат" */
-  .copy-btn {
-    background-color: #ff4d4d;
-  }
-  /* Кнопка "Подняться наверх" (синий цвет) */
-  .blue-btn {
-    background-color: #007bff;
-  }
-  /* При наведении можно сделать лёгкий эффект */
-  .action-btn:hover {
-    opacity: 0.9;
-  }
+    function copyResult() {
+      let resultText = document.getElementById("result").textContent.trim();
+      let mostCommonName = document.getElementById("resultTitle").textContent.trim();
+      let removeMostCommon = document.getElementById('removeMostCommon').checked;
   
-  /* Пример существующих стилей для остального интерфейса */
-  /* Например, стиль для заголовка "Результат:" */
-  #resultTitle {
-    margin: 0;
-  }
-</style>
-    
-    <script>
-// Функция для плавного скролла наверх
-function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-  
-function clearInput() {
-    document.getElementById("battleInput").value = "";
-}
-function copyResult() {
-    let resultText = document.getElementById("result").textContent.trim();
-    let mostCommonName = document.getElementById("resultTitle").textContent.trim();
-    let removeMostCommon = document.getElementById('removeMostCommon').checked;
-
-    if (!resultText) {
+      if (!resultText) {
         alert("Результат пуст, нечего копировать!");
         return;
-    }
-
-    // Если установлен чекбокс "Удалить никнейм", добавляем mostCommonName в начало
-    let textToCopy = removeMostCommon ? `${mostCommonName}\n${resultText}` : resultText;
-
-    navigator.clipboard.writeText(textToCopy).then(() => {
+      }
+  
+      // Если установлен чекбокс "Удалить никнейм", добавляем mostCommonName в начало
+      let textToCopy = removeMostCommon ? `${mostCommonName}\n${resultText}` : resultText;
+  
+      navigator.clipboard.writeText(textToCopy).then(() => {
         alert("Результат скопирован в буфер обмена!");
-    }).catch(err => {
+      }).catch(err => {
         console.error("Ошибка при копировании: ", err);
         alert("Ошибка при копировании!");
-    });
-}
-
-function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
-    html = cleanSpecialSymbols(html);
-    html = html.replace(/&nbsp;/g, ' ');
-    let playerCounts = {}; // Подсчитываем, сколько раз встречается каждый ник
-    let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*(.*?)<!--\d+-->/gs)];
-    
-    let battles = [];
-    let useLordswm = document.getElementById('useLordswm').checked;
-    let removeDate = document.getElementById("removeDate").checked;
-    let removeMostCommon = document.getElementById("removeMostCommon").checked;
-    
-    // Формируем базовый массив боёв
-    for (let match of battleMatches) {
+      });
+    }
+  
+    function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
+      html = cleanSpecialSymbols(html);
+      html = html.replace(/&nbsp;/g, ' ');
+      let playerCounts = {}; // Подсчитываем, сколько раз встречается каждый ник
+      let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([a-zA-Z0-9]+))?[^>]*>(\d{2}-\d{2}-\d{2} \d{2}:\d{2})<\/a>:\s*(.*?)<!--\d+-->/gs)];
+      
+      let battles = [];
+      let useLordswm = document.getElementById('useLordswm').checked;
+      let removeDate = document.getElementById("removeDate").checked;
+      let removeMostCommon = document.getElementById("removeMostCommon").checked;
+      
+      // Формируем базовый массив боёв
+      for (let match of battleMatches) {
         let warId = match[1];
         let secretCode = match[2] || "";
         let [day, month, year, time] = match[3].split(/[- ]/);
         let formattedDateTime = `${year}-${month}-${day} ${time}`;
         let participantsRaw = match[4].trim();
-
+  
         let sides = participantsRaw.split(/\s+vs\s+/g);
         let sidesParsed = sides.map(side => extractPlayerNames(side));
         // Подсчитываем частоту никнеймов
         for (let side of sidesParsed) {
-            for (let playerName of side) {
-                if (!playerCounts[playerName]) {
-                    playerCounts[playerName] = 0;
-                }
-                playerCounts[playerName]++;
+          for (let playerName of side) {
+            if (!playerCounts[playerName]) {
+              playerCounts[playerName] = 0;
             }
+            playerCounts[playerName]++;
+          }
         }
         
         // Определяем статус каждой стороны по наличию тега <b>
         let sidesStatus = sides.map(side => side.includes("<b>") ? "[win]" : "[lose]");
-
+  
         let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
         let battleLink = `https://${baseDomain}/warlog.php?warid=${warId}`;
         if (secretCode) battleLink += `&show=${secretCode}`;
         if (watchFromStart) battleLink += "&lt";
-
+  
         let battleResult = `${formattedDateTime} ` +
             sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
-
+  
         battles.push({ dateTime: formattedDateTime, battleResult });
-    }
-    
-    // Определяем основного игрока (самый частый ник)
-    let maxCount = 0;
-    let mostCommonPlayer = "";
-    for (let player in playerCounts) {
+      }
+      
+      // Определяем основного игрока (самый частый ник)
+      let maxCount = 0;
+      let mostCommonPlayer = "";
+      for (let player in playerCounts) {
         if (playerCounts[player] > maxCount) {
-            maxCount = playerCounts[player];
-            mostCommonPlayer = player;
+          maxCount = playerCounts[player];
+          mostCommonPlayer = player;
         }
-    }
-    // Выводим найденного основного игрока в заголовок результата
-    document.getElementById("resultTitle").textContent = mostCommonPlayer;
-    console.log("mostCommonPlayer", mostCommonPlayer);
-    
-    // Определяем результат (победа/поражение) основного игрока во всех боях.
-    // Для сопоставления используем базовое имя (до первого символа "[")
-    if (mostCommonPlayer) {
+      }
+      // Выводим найденного основного игрока в заголовок результата
+      document.getElementById("resultTitle").textContent = mostCommonPlayer;
+      console.log("mostCommonPlayer", mostCommonPlayer);
+      
+      // Определяем результат (победа/поражение) основного игрока во всех боях.
+      // Для сопоставления используем базовое имя (до первого символа "[")
+      if (mostCommonPlayer) {
         let basePlayerName = "";
         for (let i = 0; i < mostCommonPlayer.length; i++) {
-            if (mostCommonPlayer[i] === "[") break;
-            basePlayerName += mostCommonPlayer[i];
+          if (mostCommonPlayer[i] === "[") break;
+          basePlayerName += mostCommonPlayer[i];
         }
         let playerSearchName = basePlayerName;
         
         battles = battles.map(battle => {
-            let battleParts = battle.battleResult.split(" ");
-            if (battleParts.length < 3) return battle; // Если формат не соответствует
-            let dateTime = battleParts.slice(0, 2).join(" ");
-            let resultPart = battleParts.slice(2).join(" ");
-            let parts = resultPart.split(" vs ");
-            let playerResult = null;
-            let battleLink = "";
-            let newParts = [];
-            
-            for (let side of parts) {
-                side = side.trim();
-                // Если присутствует ссылка, отделяем её
-                let linkStart = side.indexOf("http");
-                if (linkStart !== -1) {
-                    battleLink = side.slice(linkStart);
-                    side = side.slice(0, linkStart).trim();
-                }
-                if (side.includes(playerSearchName)) {
-                    // Определяем результат основного игрока
-                    playerResult = side.includes("[win]") ? "[win]" : "[lose]";
-                    // Если опция "Удалить никнейм" включена, не добавляем эту сторону вовсе
-                    if (!removeMostCommon) {
-                        side = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
-                        newParts.push(side);
-                    }
-                    // Если удаляем никнейм – сторона не добавляется,
-                    // так как информация о результате уже выводится отдельно.
-                } else {
-                    // Для остальных сторон удаляем маркеры побед/поражений
-                    let cleanSide = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
-                    newParts.push(cleanSide);
-                }
+          let battleParts = battle.battleResult.split(" ");
+          if (battleParts.length < 3) return battle; // Если формат не соответствует
+          let dateTime = battleParts.slice(0, 2).join(" ");
+          let resultPart = battleParts.slice(2).join(" ");
+          let parts = resultPart.split(" vs ");
+          let playerResult = null;
+          let battleLink = "";
+          let newParts = [];
+          
+          for (let side of parts) {
+            side = side.trim();
+            // Если присутствует ссылка, отделяем её
+            let linkStart = side.indexOf("http");
+            if (linkStart !== -1) {
+              battleLink = side.slice(linkStart);
+              side = side.slice(0, linkStart).trim();
             }
-            if (playerResult === null) return battle;
-            // Если выбрана опция "Удалить никнейм" и остаётся более одного противника,
-            // используем запятые в качестве разделителя вместо " vs "
-            let separator = (removeMostCommon && newParts.length > 1) ? ", " : " vs ";
-            let newBattle = `${dateTime} ${playerResult} ${newParts.join(separator)} ${battleLink}`.trim();
-            return { ...battle, battleResult: newBattle };
+            if (side.includes(playerSearchName)) {
+              // Определяем результат основного игрока
+              playerResult = side.includes("[win]") ? "[win]" : "[lose]";
+              // Если опция "Удалить никнейм" включена, не добавляем эту сторону вовсе
+              if (!removeMostCommon) {
+                side = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
+                newParts.push(side);
+              }
+              // Если удаляем никнейм – сторона не добавляется,
+              // так как информация о результате уже выводится отдельно.
+            } else {
+              // Для остальных сторон удаляем маркеры побед/поражений
+              let cleanSide = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
+              newParts.push(cleanSide);
+            }
+          }
+          if (playerResult === null) return battle;
+          // Если выбрана опция "Удалить никнейм" и остаётся более одного противника,
+          // используем запятые в качестве разделителя вместо " vs "
+          let separator = (removeMostCommon && newParts.length > 1) ? ", " : " vs ";
+          let newBattle = `${dateTime} ${playerResult} ${newParts.join(separator)} ${battleLink}`.trim();
+          return { ...battle, battleResult: newBattle };
         });
-    }
-    
-    // Сортировка боёв по дате
-    let sortAscending = document.getElementById("sortAscending").checked;
-    battles.sort((a, b) => sortAscending ? a.dateTime.localeCompare(b.dateTime) : b.dateTime.localeCompare(a.dateTime));
-    
-    if (doFilter && filters.length > 0) {
+      }
+      
+      // Сортировка боёв по дате
+      let sortAscending = document.getElementById("sortAscending").checked;
+      battles.sort((a, b) => sortAscending ? a.dateTime.localeCompare(b.dateTime) : b.dateTime.localeCompare(a.dateTime));
+      
+      if (doFilter && filters.length > 0) {
         battles = battles.filter(battle =>
-            filters.some(filterText => battle.battleResult.includes(filterText))
+          filters.some(filterText => battle.battleResult.includes(filterText))
         );
-    }
-    
-    // Если выбрана нумерация, добавляем её
-    let numberBattles = document.getElementById("numberBattles").checked;
-    let startNumber = parseInt(document.getElementById("startNumber").value, 10) || 1;
-    if (numberBattles) {
+      }
+      
+      // Если выбрана нумерация, добавляем её
+      let numberBattles = document.getElementById("numberBattles").checked;
+      let startNumber = parseInt(document.getElementById("startNumber").value, 10) || 1;
+      if (numberBattles) {
         let winCount = startNumber;
         let maxWidth = (winCount + battles.length).toString().length;
         let foundNumbering = false;
         // Сортируем бои по дате от старых к новым
         battles.sort((a, b) => a.dateTime.localeCompare(b.dateTime));
         for (let i = 0; i < battles.length; i++) {
-            if (battles[i].battleResult.includes("[win]")) {
-                let formattedNumber = winCount.toString().padStart(maxWidth, "0");
-                battles[i].battleResult = `(${formattedNumber}) ` + battles[i].battleResult;
-                winCount++;
-                foundNumbering = true;
-            } else if (battles[i].battleResult.includes("[lose]")) {
-                let minusString = "-".repeat(maxWidth);
-                battles[i].battleResult = `(${minusString}) ` + battles[i].battleResult;
-                foundNumbering = true;
-            }
+          if (battles[i].battleResult.includes("[win]")) {
+            let formattedNumber = winCount.toString().padStart(maxWidth, "0");
+            battles[i].battleResult = `(${formattedNumber}) ` + battles[i].battleResult;
+            winCount++;
+            foundNumbering = true;
+          } else if (battles[i].battleResult.includes("[lose]")) {
+            let minusString = "-".repeat(maxWidth);
+            battles[i].battleResult = `(${minusString}) ` + battles[i].battleResult;
+            foundNumbering = true;
+          }
         }
         if (!foundNumbering) {
-            console.error("❌ Ошибка: номера не были добавлены!");
+          console.error("❌ Ошибка: номера не были добавлены!");
         } else {
-            console.log("✅ Номера успешно добавлены.");
+          console.log("✅ Номера успешно добавлены.");
         }
         if (!sortAscending) {
-            battles.reverse();
+          battles.reverse();
         }
-    }
-
-    // Опция "Удалить дату и время после сортировки"
-    if (removeDate) {
+      }
+  
+      // Опция "Удалить дату и время после сортировки"
+      if (removeDate) {
         battles = battles.map(battle => {
-            let newResult = battle.battleResult;
-            // Если строка начинается с нумерации, сохраняем её, удаляя только дату/время
-            if (newResult.startsWith("(")) {
-                newResult = newResult.replace(/^(\(\d+\)|\(-+\)) \d{2}-\d{2}-\d{2} \d{2}:\d{2} /, "$1 ");
-            } else {
-                // Если нумерации нет, удаляем дату/время полностью
-                newResult = newResult.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, "");
-            }
-            return { ...battle, battleResult: newResult };
+          let newResult = battle.battleResult;
+          // Если строка начинается с нумерации, сохраняем её, удаляя только дату/время
+          if (newResult.startsWith("(")) {
+            newResult = newResult.replace(/^(\(\d+\)|\(-+\)) \d{2}-\d{2}-\d{2} \d{2}:\d{2} /, "$1 ");
+          } else {
+            // Если нумерации нет, удаляем дату/время полностью
+            newResult = newResult.replace(/^\d{2}-\d{2}-\d{2} \d{2}:\d{2} /, "");
+          }
+          return { ...battle, battleResult: newResult };
         });
-    }
-    
-    // Преобразуем объекты в строки, убираем лишние запятые и корректируем лишние пробелы
-    battles = battles.map(battle => battle.battleResult);
-    battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim());
-    battles = battles.filter(battle => battle.trim().length > 0);
-    
-    // Для фильтрации выигрышей заменяем маркер [win] на [win!]
-    battles = battles.map(battle => battle.replace("[win]", "[win!]"));
-    if (onlyWins) {
+      }
+      
+      // Преобразуем объекты в строки, убираем лишние запятые и корректируем лишние пробелы
+      battles = battles.map(battle => battle.battleResult);
+      battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim());
+      battles = battles.filter(battle => battle.trim().length > 0);
+      
+      // Для фильтрации выигрышей заменяем маркер [win] на [win!]
+      battles = battles.map(battle => battle.replace("[win]", "[win!]"));
+      if (onlyWins) {
         battles = battles.filter(battle => battle.includes("[win!]"));
         // Убираем маркер [win!] и заменяем последовательности из нескольких пробелов одним
         battles = battles.map(battle => battle.replace("[win!]", "").replace(/\s{2,}/g, " ").trim());
-    }
-    
-    let includeAd = document.getElementById("includeAd").checked;
-    if (includeAd) {
+      }
+      
+      let includeAd = document.getElementById("includeAd").checked;
+      if (includeAd) {
         let currentURL = window.location.href;
         battles.push(`\nСписок боев сгенерирован здесь: ${currentURL}`);
+      }
+      return battles.join("\n");
     }
-    return battles.join("\n");
-}
-
-
-function extractPlayerNames(text) {
-    let cleanedText = text.replace(/<[^>]+>/g, '').trim();
-    let names = [];
-
-    // Улучшенный regex для ников и существ с количеством
-    let playerRegex = /([A-Za-zА-Яа-яЁё0-9\s\-_']+(?:\s*\(\d+\))?)(?:\[(\d+)\])?/g;
-    let match;
-
-    while ((match = playerRegex.exec(cleanedText)) !== null) {
+  
+    function extractPlayerNames(text) {
+      let cleanedText = text.replace(/<[^>]+>/g, '').trim();
+      let names = [];
+  
+      // Улучшенный regex для ников и существ с количеством
+      let playerRegex = /([A-Za-zА-Яа-яЁё0-9\s\-_']+(?:\s*\(\d+\))?)(?:\[(\d+)\])?/g;
+      let match;
+  
+      while ((match = playerRegex.exec(cleanedText)) !== null) {
         let cleanedName = decodeHTMLEntities(match[1].trim());
         if (match[2]) {
-            cleanedName += `[${match[2]}]`;
+          cleanedName += `[${match[2]}]`;
         }
         names.push(cleanedName);
+      }
+  
+      return names.length > 0 ? names : ["Неизвестный"];
     }
-
-    return names.length > 0 ? names : ["Неизвестный"];
-}
-function cleanSpecialSymbols(html) {
-    return html.replace(/<[^>]+>(&[^;]+;|\s*)<\/[^>]+>/g, ''); // Удаляем "мусорные" символы
-}
-
-
-/**
- * Функция декодирования HTML-сущностей (&nbsp;, &tau;, &#9674; и т.д.)
- */
-function decodeHTMLEntities(text) {
-    let doc = new DOMParser().parseFromString(text, "text/html");
-    return doc.documentElement.textContent;
-}
-
- 
-
-function processBattles() {
-    let html = document.getElementById("battleInput").value;
-    let filters = document.getElementById("filterInput").value.split('\n').map(f => f.trim()).filter(f => f);
-    let doFilter = document.getElementById("doFilter").checked;
-    let onlyWins = document.getElementById("onlyWins").checked;
-    let watchFromStart = document.getElementById("watchFromStart").checked;
-
-    let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart);
-    document.getElementById("result").textContent = result || "Ничего не найдено";
-    
-    // Скрываем входные данные и настройки
-    document.getElementById("inputContainer").style.display = "none";
-    document.getElementById("toggleButton").style.display = "block";
-    document.getElementById("toggleButton").textContent = "Развернуть настройки";
-    // Показываем кнопку "Развернуть"
-}
-
-function toggleInput() {
-    let inputContainer = document.getElementById("inputContainer");
-    let toggleButton = document.getElementById("toggleButton");
-
-    if (toggleButton.textContent === "Развернуть настройки") {
+    function cleanSpecialSymbols(html) {
+      return html.replace(/<[^>]+>(&[^;]+;|\s*)<\/[^>]+>/g, ''); // Удаляем "мусорные" символы
+    }
+    /**
+     * Функция декодирования HTML-сущностей (&nbsp;, &tau;, &#9674; и т.д.)
+     */
+    function decodeHTMLEntities(text) {
+      let doc = new DOMParser().parseFromString(text, "text/html");
+      return doc.documentElement.textContent;
+    }
+  
+    function processBattles() {
+      let html = document.getElementById("battleInput").value;
+      let filters = document.getElementById("filterInput").value.split('\n').map(f => f.trim()).filter(f => f);
+      let doFilter = document.getElementById("doFilter").checked;
+      let onlyWins = document.getElementById("onlyWins").checked;
+      let watchFromStart = document.getElementById("watchFromStart").checked;
+  
+      let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart);
+      document.getElementById("result").textContent = result || "Ничего не найдено";
+      
+      // Скрываем входные данные и настройки
+      document.getElementById("inputContainer").style.display = "none";
+      document.getElementById("toggleButton").style.display = "block";
+      document.getElementById("toggleButton").textContent = "Развернуть настройки";
+    }
+  
+    function toggleInput() {
+      let inputContainer = document.getElementById("inputContainer");
+      let toggleButton = document.getElementById("toggleButton");
+  
+      if (toggleButton.textContent === "Развернуть настройки") {
         inputContainer.style.display = "block";
         toggleButton.textContent = "Скрыть настройки";
-    } else {
+      } else {
         inputContainer.style.display = "none";
         toggleButton.textContent = "Развернуть настройки";
+      }
     }
-}
-function saveOptions() {
-    let checkboxes = document.querySelectorAll(".options input[type='checkbox']");
-    checkboxes.forEach(checkbox => {
+    function saveOptions() {
+      let checkboxes = document.querySelectorAll(".options input[type='checkbox']");
+      checkboxes.forEach(checkbox => {
         localStorage.setItem(checkbox.id, checkbox.checked);
-    });
-}
-function loadOptions() {
-    let checkboxes = document.querySelectorAll(".options input[type='checkbox']");
-    checkboxes.forEach(checkbox => {
+      });
+    }
+    function loadOptions() {
+      let checkboxes = document.querySelectorAll(".options input[type='checkbox']");
+      checkboxes.forEach(checkbox => {
         let storedValue = localStorage.getItem(checkbox.id);
         if (storedValue !== null) {
-            checkbox.checked = storedValue === "true";
+          checkbox.checked = storedValue === "true";
         }
-    });
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    loadOptions(); // Загружаем сохранённые настройки при загрузке страницы
-    document.querySelectorAll(".options input[type='checkbox']").forEach(checkbox => {
+      });
+    }
+  
+    document.addEventListener("DOMContentLoaded", () => {
+      loadOptions(); // Загружаем сохранённые настройки при загрузке страницы
+      document.querySelectorAll(".options input[type='checkbox']").forEach(checkbox => {
         checkbox.addEventListener("change", saveOptions); // Сохраняем при изменении
+      });
     });
-});
-
-    </script>
+  </script>
 </body>
 </html>
