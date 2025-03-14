@@ -106,7 +106,13 @@
             width: 100%;
             box-sizing: border-box;
           }
-          /* Каждый блок FAQ оформлен как прямоугольник с закруглёнными краями */
+          /* На мобильных устройствах располагаем блоки вертикально */
+          @media (max-width: 600px) {
+            #faq {
+              flex-direction: column;
+            }
+          }
+          /* Каждый блок FAQ оформлен как прямоугольник с закругленными краями */
           .faq-item {
             flex: 1 1 48%;
             padding: 15px;
@@ -125,25 +131,27 @@
             border-color: #F44336;
             color: #F44336;
           }
-          /* Заголовок блока – подсказка, что по нему можно кликнуть */
+          /* Заголовок блока – даёт понять, что по нему можно кликнуть */
           .faq-item summary {
             font-weight: bold;
             cursor: pointer;
           }
-          /* Сброс цвета ссылок внутри FAQ, если нужно – можно настроить отдельно */
+          /* Ссылки наследуют цвет и подчёркивание */
           .faq-item a {
             color: inherit;
             text-decoration: underline;
           }
-          /* Можно добавить небольшой отступ для абзацев */
+          /* Параграфы с отступами и выравниванием текста по ширине */
           .faq-item p {
             margin: 10px 0 0 0;
+            text-align: justify;
           }
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v42-008</h2>
-    
+    <h2>Парсер боёв v42-009</h2>
+
+<div id="inputContainer">
     <!-- Блок FAQ с вопросами и ответами -->
 <div id="faq">
   <details class="faq-item green">
@@ -156,12 +164,17 @@
   <details class="faq-item red">
     <summary>Ты украдешь мои бои?</summary>
     <p>
-      Нет. Код работает исключительно на стороне клиента и не передает никакую информацию на сервер, поэтому я не украду ваши бои. Код размещен с помощью <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a> — платформы, которая не поддерживает серверный код, что обеспечивает безопасность ваших данных. Если у вас возникают сомнения, вы можете посмотреть исходный код сайта в браузере или по <a href="https://github.com/dmkz/dmkz.github.io" target="_blank" rel="noopener noreferrer">ссылке</a>.
+      Нет. Код работает исключительно на стороне клиента и не передает никакую информацию на сервер, поэтому я не украду ваши бои.
+    </p>
+    <p>
+      Код размещен с помощью <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a> — платформы, которая не поддерживает серверный код, что обеспечивает безопасность ваших данных.
+    </p>
+    <p>
+      Если у вас возникают сомнения, вы можете посмотреть исходный код сайта в браузере или по <a href="https://github.com/dmkz/dmkz.github.io" target="_blank" rel="noopener noreferrer">ссылке</a>.
     </p>
   </details>
 </div>
 
-<div id="inputContainer">
     <div class="container">
         <div class="half">
             <h3>Входные данные (HTML)</h3>
