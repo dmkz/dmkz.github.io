@@ -182,7 +182,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2</h2>
+  <h2>Парсер боёв v2-001</h2>
 
   <div id="inputContainer">
     <!-- Блок FAQ с вопросами и ответами -->
@@ -254,6 +254,7 @@
       <label>
         <input type="checkbox" id="includeAd" checked> Добавить ссылку на генератор
       </label><br>
+      <label><input type="checkbox" id="removeEnemies"> Удалить врагов</label><br>
     </div>
     
     <button onclick="processBattles()">Обработать</button>
@@ -315,7 +316,8 @@
       let useLordswm = document.getElementById('useLordswm').checked;
       let removeDate = document.getElementById("removeDate").checked;
       let removeMostCommon = document.getElementById("removeMostCommon").checked;
-      
+      let removeEnemies = document.getElementById("removeEnemies") && document.getElementById("removeEnemies").checked;
+
       // Формируем базовый массив боёв
       for (let match of battleMatches) {
         let warId = match[1];
@@ -364,57 +366,66 @@
       console.log("mostCommonPlayer", mostCommonPlayer);
       
       // Определяем результат (победа/поражение) основного игрока во всех боях.
-      // Для сопоставления используем базовое имя (до первого символа "[")
-      if (mostCommonPlayer) {
-        let basePlayerName = "";
-        for (let i = 0; i < mostCommonPlayer.length; i++) {
-          if (mostCommonPlayer[i] === "[") break;
-          basePlayerName += mostCommonPlayer[i];
-        }
-        let playerSearchName = basePlayerName;
-        
-        battles = battles.map(battle => {
-          let battleParts = battle.battleResult.split(" ");
-          if (battleParts.length < 3) return battle; // Если формат не соответствует
-          let dateTime = battleParts.slice(0, 2).join(" ");
-          let resultPart = battleParts.slice(2).join(" ");
-          let parts = resultPart.split(" vs ");
-          let playerResult = null;
-          let battleLink = "";
-          let newParts = [];
-          
-          for (let side of parts) {
-            side = side.trim();
-            // Если присутствует ссылка, отделяем её
-            let linkStart = side.indexOf("http");
-            if (linkStart !== -1) {
-              battleLink = side.slice(linkStart);
-              side = side.slice(0, linkStart).trim();
-            }
-            if (side.includes(playerSearchName)) {
-              // Определяем результат основного игрока
-              playerResult = side.includes("[win]") ? "[win]" : "[lose]";
-              // Если опция "Удалить никнейм" включена, не добавляем эту сторону вовсе
-              if (!removeMostCommon) {
-                side = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
-                newParts.push(side);
-              }
-              // Если удаляем никнейм – сторона не добавляется,
-              // так как информация о результате уже выводится отдельно.
-            } else {
-              // Для остальных сторон удаляем маркеры побед/поражений
-              let cleanSide = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
-              newParts.push(cleanSide);
-            }
-          }
-          if (playerResult === null) return battle;
-          // Если выбрана опция "Удалить никнейм" и остаётся более одного противника,
-          // используем запятые в качестве разделителя вместо " vs "
-          let separator = (removeMostCommon && newParts.length > 1) ? ", " : " vs ";
-          let newBattle = `${dateTime} ${playerResult} ${newParts.join(separator)} ${battleLink}`.trim();
-          return { ...battle, battleResult: newBattle };
-        });
+    // Для сопоставления используем базовое имя (до первого символа "[")
+    if (mostCommonPlayer) {
+      let basePlayerName = "";
+      for (let i = 0; i < mostCommonPlayer.length; i++) {
+        if (mostCommonPlayer[i] === "[") break;
+        basePlayerName += mostCommonPlayer[i];
       }
+      let playerSearchName = basePlayerName;
+      
+      // Получаем значение новой опции "Удалить врагов"
+      let removeEnemies = document.getElementById("removeEnemies") && document.getElementById("removeEnemies").checked;
+      
+      battles = battles.map(battle => {
+        let battleParts = battle.battleResult.split(" ");
+        if (battleParts.length < 3) return battle; // Если формат не соответствует
+        let dateTime = battleParts.slice(0, 2).join(" ");
+        let resultPart = battleParts.slice(2).join(" ");
+        let parts = resultPart.split(" vs ");
+        let playerResult = null;
+        let battleLink = "";
+        let newParts = [];
+        
+        for (let side of parts) {
+          side = side.trim();
+          // Если присутствует ссылка, отделяем её
+          let linkStart = side.indexOf("http");
+          if (linkStart !== -1) {
+            battleLink = side.slice(linkStart);
+            side = side.slice(0, linkStart).trim();
+          }
+          // Если включена опция "Удалить врагов" и сторона НЕ содержит базовое имя основного игрока,
+          // пропускаем её (то есть удаляем врагов)
+          if (removeEnemies && !side.includes(playerSearchName)) {
+            continue;
+          }
+          if (side.includes(playerSearchName)) {
+            // Определяем результат основного игрока
+            playerResult = side.includes("[win]") ? "[win]" : "[lose]";
+            // Если опция "Удалить никнейм" НЕ включена, добавляем эту сторону (с очищением маркера)
+            if (!removeMostCommon) {
+              side = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
+              newParts.push(side);
+            }
+            // Если удаляем никнейм – сторона не добавляется,
+            // так как информация о результате уже выводится отдельно.
+          } else {
+            // Для остальных сторон удаляем маркеры побед/поражений
+            let cleanSide = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
+            newParts.push(cleanSide);
+          }
+        }
+        if (playerResult === null) return battle;
+        // Если выбрана опция "Удалить никнейм" и остаётся более одного противника,
+        // используем запятые в качестве разделителя вместо " vs "
+        let separator = (removeMostCommon && newParts.length > 1) ? ", " : " vs ";
+        let newBattle = `${dateTime} ${playerResult} ${newParts.join(separator)} ${battleLink}`.trim();
+        return { ...battle, battleResult: newBattle };
+      });
+    }
+
       
       // Сортировка боёв по дате
       let sortAscending = document.getElementById("sortAscending").checked;
