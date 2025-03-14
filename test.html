@@ -149,7 +149,7 @@
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v42-009</h2>
+    <h2>Парсер боёв v42-010</h2>
 
 <div id="inputContainer">
     <!-- Блок FAQ с вопросами и ответами -->
@@ -230,12 +230,87 @@
 
 <button id="toggleButton" onclick="toggleInput()" style="display: none;">Развернуть настройки</button>
 
+<!-- Верхний блок с кнопкой и заголовком -->
+<div id="result-header" class="flex-container">
+  <div class="half">
+    <button id="copyButtonTop" class="action-btn copy-btn" onclick="copyResult()">Скопировать результат</button>
+  </div>
+  <div class="half">
     <h3 id="resultTitle">Результат:</h3>
+  </div>
+</div>
+
     <pre id="result"></pre>
-    <button id="copyButton" onclick="copyResult()">Скопировать результат</button>
+<!-- Нижний блок с кнопками (при длинном результате) -->
+<div id="bottom-actions" class="flex-container">
+  <div class="half">
+    <button id="scrollTopButton" class="action-btn blue-btn" onclick="scrollToTop()">Подняться наверх</button>
+  </div>
+  <div class="half">
+    <button id="copyButtonBottom" class="action-btn copy-btn" onclick="copyResult()">Скопировать результат</button>
+  </div>
+</div>
+
+<style>
+  /* Контейнер для верхнего и нижнего блока, делённый на 2 равные части */
+  .flex-container {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 10px 0;
+  }
+  .half {
+    width: 50%;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  /* На мобильных устройствах располагаем элементы вертикально */
+  @media (max-width: 600px) {
+    .flex-container {
+      flex-direction: column;
+      gap: 10px;
+    }
+    .half {
+      width: 100%;
+    }
+  }
+  /* Общий стиль для кнопок */
+  .action-btn {
+    color: #fff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  /* Кнопка "Скопировать результат" */
+  .copy-btn {
+    background-color: #ff4d4d;
+  }
+  /* Кнопка "Подняться наверх" (синий цвет) */
+  .blue-btn {
+    background-color: #007bff;
+  }
+  /* При наведении можно сделать лёгкий эффект */
+  .action-btn:hover {
+    opacity: 0.9;
+  }
+  
+  /* Пример существующих стилей для остального интерфейса */
+  /* Например, стиль для заголовка "Результат:" */
+  #resultTitle {
+    margin: 0;
+  }
+</style>
     
     <script>
-
+// Функция для плавного скролла наверх
+function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+  
 function clearInput() {
     document.getElementById("battleInput").value = "";
 }
