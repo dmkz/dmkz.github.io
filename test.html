@@ -181,7 +181,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-004</h2>
+  <h2>Парсер боёв v2-005</h2>
 
   <div id="inputContainer">
     <!-- Блок FAQ с вопросами и ответами -->
@@ -408,13 +408,13 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
       }
       if (playerResult === null) return battle;
       
-      // Получаем значение опции "Удалить врагов" (в этом случае она применяется после всех остальных опций)
+      // Получаем значение опции "Удалить врагов" (но отложим её применение до самого конца)
       let removeEnemies = document.getElementById("removeEnemies") && document.getElementById("removeEnemies").checked;
       
-      // Если опция "Удалить врагов" активна, оставляем только дату, результат и ссылку
       let newBattle;
       if (removeEnemies) {
-        newBattle = `${dateTime} ${playerResult} ${battleLink}`.trim();
+        // Если опция активна, оставляем только ссылку на бой
+        newBattle = battleLink;
       } else {
         let separator = (removeMostCommon && newParts.length > 1) ? ", " : " vs ";
         newBattle = `${dateTime} ${playerResult} ${newParts.join(separator)} ${battleLink}`.trim();
@@ -500,6 +500,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
   }
   return battles.join("\n");
 }
+
 
   
     function extractPlayerNames(text) {
