@@ -181,7 +181,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-007</h2>
+  <h2>Парсер боёв v2-008</h2>
 
   <div id="inputContainer">
     <!-- Блок FAQ с вопросами и ответами -->
@@ -306,9 +306,10 @@
     }
   
 function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
+  // Предварительная обработка HTML
   html = cleanSpecialSymbols(html);
   html = html.replace(/&nbsp;/g, ' ');
-  let playerCounts = {}; // Подсчитываем, сколько раз встречается каждый ник
+  let playerCounts = {};
   let battleMatches = [...html.matchAll(/href="warlog\.php\?warid=(\d+)(?:&show=([\w\-]+))?[^>]*>\s*(\d{2}-\d{2}-\d{2}\s+\d{2}:\d{2})\s*<\/a>\s*:\s*([\s\S]*?)<!--\d+-->/gi)];
   
   let battles = [];
@@ -348,6 +349,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
       sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") +
       ` ${battleLink}`;
   
+    // Сохраняем полную строку боя
     battles.push({ dateTime: formattedDateTime, battleResult });
   }
   
@@ -363,7 +365,7 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
   document.getElementById("resultTitle").textContent = mostCommonPlayer;
   console.log("mostCommonPlayer", mostCommonPlayer);
   
-  // Обработка строк боёв для определения результата основного игрока.
+  // Обрабатываем каждую строку боя для выделения информации об основном игроке.
   if (mostCommonPlayer) {
     let basePlayerName = "";
     for (let i = 0; i < mostCommonPlayer.length; i++) {
@@ -402,34 +404,18 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
           newParts.push(cleanSide);
         }
       }
-      if (playerResult === null) return battle;
-      
-      // Получаем значение опции "Удалить врагов"
-      let removeEnemies = document.getElementById("removeEnemies") && document.getElementById("removeEnemies").checked;
-      let newBattle;
-      if (removeEnemies) {
-        if (removeMostCommon) {
-          // Если выбраны обе опции "Удалить никнейм" и "Удалить врагов",
-          // оставляем дату, результат и ссылку (никаких никнеймов не выводим)
-          newBattle = `${dateTime} ${playerResult} ${battleLink}`.trim();
-        } else {
-          // Если выбрана опция "Удалить врагов", но никнейм сохраняется,
-          // оставляем дату, результат и только ту сторону, где содержится имя основного игрока
-          let playerSide = newParts.find(side => side.includes(playerSearchName)) || mostCommonPlayer;
-          newBattle = `${dateTime} ${playerResult} ${playerSide} ${battleLink}`.trim();
-        }
-      } else {
-        let separator = (removeMostCommon && newParts.length > 1) ? ", " : " vs ";
-        newBattle = `${dateTime} ${playerResult} ${newParts.join(separator)} ${battleLink}`.trim();
-      }
-      return { ...battle, battleResult: newBattle };
+      // Собираем полную строку без удаления врагов – остальные опции ещё не затрагиваются.
+      let separator = (removeMostCommon && newParts.length > 1) ? ", " : " vs ";
+      let fullBattle = `${dateTime} ${playerResult} ${newParts.join(separator)} ${battleLink}`.trim();
+      return { ...battle, battleResult: fullBattle };
     });
   }
   
-  // Сортировка боёв по дате
+  // Сортировка боёв
   let sortAscending = document.getElementById("sortAscending").checked;
   battles.sort((a, b) => sortAscending ? a.dateTime.localeCompare(b.dateTime) : b.dateTime.localeCompare(a.dateTime));
   
+  // Фильтрация боёв по заданным фильтрам
   if (doFilter && filters.length > 0) {
     battles = battles.filter(battle =>
       filters.some(filterText => battle.battleResult.includes(filterText))
@@ -485,24 +471,48 @@ function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
     });
   }
   
-  battles = battles.map(battle => battle.battleResult);
-  battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim());
-  battles = battles.filter(battle => battle.trim().length > 0);
+  // Применяем финальное преобразование, если выбрана опция "Удалить врагов".
+  // Это выполняется после фильтрации и нумерации, чтобы фильтр работал по полной информации.
+  if (document.getElementById("removeEnemies") && document.getElementById("removeEnemies").checked) {
+    // Обрабатываем каждую итоговую строку. Предполагаем, что итоговый формат: 
+    // "{dateTime} {result} {sides} {battleLink}"
+    // Если одновременно выбрана опция "Удалить никнейм", оставляем только дату, результат и ссылку.
+    // Если не выбрана "Удалить никнейм", оставляем дату, результат, и только ту сторону, содержащую имя основного игрока.
+    battles = battles.map(battle => {
+      let m = battle.battleResult.match(/^(\S+\s+\S+)\s+(\[win!\]|\[lose\])\s+(.*)\s+(https?:\/\/\S+)$/);
+      if (m) {
+        let dt = m[1], res = m[2], sidesText = m[3], link = m[4];
+        if (removeMostCommon) {
+          return `${dt} ${res} ${link}`;
+        } else {
+          let sidesArray = sidesText.split(/\s+vs\s+/);
+          let playerSide = sidesArray.find(side => side.includes(playerSearchName)) || mostCommonPlayer;
+          return `${dt} ${res} ${playerSide} ${link}`.trim();
+        }
+      }
+      return battle.battleResult;
+    });
+  }
+  
+  battles = battles.map(b => b.battleResult);
+  battles = battles.map(b => b.replace(/,\s+vs/g, " vs").trim());
+  battles = battles.filter(b => b.trim().length > 0);
   
   // Замена маркера [win] на [win!] для фильтрации побед
-  battles = battles.map(battle => battle.replace("[win]", "[win!]"));
+  battles = battles.map(b => b.replace("[win]", "[win!]"));
   if (onlyWins) {
-    battles = battles.filter(battle => battle.includes("[win!]"));
-    battles = battles.map(battle => battle.replace("[win!]", "").replace(/\s{2,}/g, " ").trim());
+    battles = battles.filter(b => b.includes("[win!]"));
+    battles = battles.map(b => b.replace("[win!]", "").replace(/\s{2,}/g, " ").trim());
   }
   
   let includeAd = document.getElementById("includeAd").checked;
   if (includeAd) {
     let currentURL = window.location.href;
-    battles.push(`\nСписок боёв сгенерирован здесь: ${currentURL}`);
+    battles.push(`\nСписок боев сгенерирован здесь: ${currentURL}`);
   }
   return battles.join("\n");
 }
+
 
 
   
