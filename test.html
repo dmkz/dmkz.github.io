@@ -99,22 +99,62 @@
             text-align: left; /* Выравнивание текста по левому краю */
             white-space: pre-wrap; /* Перенос строк внутри <pre> */
         }
+        /* Контейнер FAQ занимает 100% ширины и располагает блоки в один ряд */
+          #faq {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          /* Каждый блок FAQ оформлен как прямоугольник с закруглёнными краями */
+          .faq-item {
+            flex: 1 1 48%;
+            padding: 15px;
+            background: #fff;
+            border-radius: 10px;
+            border: 2px solid;
+            box-sizing: border-box;
+          }
+          /* Зеленый блок для первого вопроса */
+          .faq-item.green {
+            border-color: #4CAF50;
+            color: #4CAF50;
+          }
+          /* Красный блок для второго вопроса */
+          .faq-item.red {
+            border-color: #F44336;
+            color: #F44336;
+          }
+          /* Заголовок блока – подсказка, что по нему можно кликнуть */
+          .faq-item summary {
+            font-weight: bold;
+            cursor: pointer;
+          }
+          /* Сброс цвета ссылок внутри FAQ, если нужно – можно настроить отдельно */
+          .faq-item a {
+            color: inherit;
+            text-decoration: underline;
+          }
+          /* Можно добавить небольшой отступ для абзацев */
+          .faq-item p {
+            margin: 10px 0 0 0;
+          }
     </style>
 </head>
 <body>
-    <h2>Парсер боёв v42-006</h2>
+    <h2>Парсер боёв v42-007</h2>
     
     <!-- Блок FAQ с вопросами и ответами -->
 <div id="faq">
-  <details>
-    <summary style="cursor: pointer;">Кто автор сайта?</summary>
+  <details class="faq-item green">
+    <summary>Кто автор сайта?</summary>
     <p>
-      Автор сайта — oxotnik102rus. Если вы обнаружили ошибку или у вас есть идея для новой функции, напишите мне в личку.</a>.
+      Автор сайта — <a href="https://www.heroeswm.ru/pl_info.php?id=2829340" target="_blank" rel="noopener noreferrer">oxotnik102rus</a>. Если вы обнаружили ошибку или у вас есть идея для новой функции, напишите мне в личку.
     </p>
   </details>
   
-  <details>
-    <summary style="cursor: pointer;">Ты украдешь мои бои?</summary>
+  <details class="faq-item red">
+    <summary>Ты украдешь мои бои?</summary>
     <p>
       Нет. Код работает исключительно на стороне клиента и не передает никакую информацию на сервер, поэтому я не украду твои бои.
     </p>
