@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Парсер боёв v2-002</title>
+  <title>Парсер боёв v2-003</title>
   <style>
     .input-group {
       display: flex;
@@ -552,7 +552,9 @@
       document.getElementById("toggleButton").style.display = "block";
       document.getElementById("toggleButton").textContent = "Развернуть настройки";
     }
-  
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
     function toggleInput() {
       let inputContainer = document.getElementById("inputContainer");
       let toggleButton = document.getElementById("toggleButton");
