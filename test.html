@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Парсер боёв v2-003</title>
+  <title>Парсер боёв v2-005</title>
   <style>
     .input-group {
       display: flex;
@@ -239,9 +239,15 @@
       <label><input type="checkbox" id="onlyWins"> Показывать только победы</label><br>
       <label><input type="checkbox" id="watchFromStart" checked> Указывать на начало боя</label><br>
       <label><input type="checkbox" id="removeDate"> Удалить дату и время после сортировки</label><br>
+      <label>
+          <input type="checkbox" id="filterByDate">
+          Удалить бои до указанной даты
+      </label>
+      <input type="text" id="dateFilterInput" placeholder="ДД-ММ-ГГГГ ЧЧ:ММ">
+      <br>
       <label><input type="checkbox" id="removeMostCommon"> Удалить никнейм</label><br>
       <!-- Новый чекбокс для удаления наименования врагов -->
-      <label><input type="checkbox" id="removeEnemyNames"> Удалить наименование врагов</label><br>
+      <label><input type="checkbox" id="removeEnemyNames"> Удалить наименование врагов с ивента</label><br>
       <label><input type="checkbox" id="useLordswm"> Использовать my.lordswm.com вместо www.heroeswm.ru</label><br>
       <label>
         <input type="checkbox" id="numberBattles"> Пронумеровать бои
@@ -324,6 +330,24 @@
         let secretCode = match[2] || "";
         let [day, month, year, time] = match[3].split(/[- ]/);
         let formattedDateTime = `${year}-${month}-${day} ${time}`;
+        // Фильтрация боёв по дате, если выбрана опция "Выбрать бои позднее указанной даты"
+        if (document.getElementById("filterByDate").checked) {
+          let userDateStr = document.getElementById("dateFilterInput").value.trim();
+          if (userDateStr !== "") {
+            // Ожидается формат "DD-MM-YYYY HH:MM"
+            let parts = userDateStr.split(" ");
+            if (parts.length === 2) {
+              let [fDay, fMonth, fYear] = parts[0].split("-");
+              let filterTime = parts[1];
+              // Преобразуем полный год к двухзначному формату (берём последние 2 символа)
+              let filterFormatted = `${fYear.slice(-2)}-${fMonth}-${fDay} ${filterTime}`;
+              // Если дата боя не строго больше указанной – пропускаем бой
+              if (formattedDateTime <= filterFormatted) {
+                continue; // пропускаем этот матч
+              }
+            }
+          }
+        }
         let participantsRaw = match[4].trim();
   
         let sides = participantsRaw.split(/\s+vs\s+/g);
@@ -572,6 +596,16 @@
       checkboxes.forEach(checkbox => {
         localStorage.setItem(checkbox.id, checkbox.checked);
       });
+      // Сохранение значения текстового поля даты/времени (id="dateFilterInput")
+      let dateField = document.getElementById("dateFilterInput");
+      if (dateField) {
+        localStorage.setItem("dateFilterInput", dateField.value);
+      }
+      // Сохранение значения поля номера (startNumber)
+      let startNumberField = document.getElementById("startNumber");
+      if (startNumberField) {
+        localStorage.setItem("startNumber", startNumberField.value);
+      }
     }
     function loadOptions() {
       let checkboxes = document.querySelectorAll(".options input[type='checkbox']");
@@ -581,6 +615,22 @@
           checkbox.checked = storedValue === "true";
         }
       });
+      // Загрузка значения текстового поля даты/времени (id="dateFilterInput")
+      let dateField = document.getElementById("dateFilterInput");
+      if (dateField) {
+        let storedDate = localStorage.getItem("dateFilterInput");
+        if (storedDate !== null) {
+          dateField.value = storedDate;
+        }
+      }
+      // Загрузка значения поля номера
+      let startNumberField = document.getElementById("startNumber");
+      if (startNumberField) {
+        let storedStartNumber = localStorage.getItem("startNumber");
+        if (storedStartNumber !== null) {
+          startNumberField.value = storedStartNumber;
+        }
+      }
     }
   
     document.addEventListener("DOMContentLoaded", () => {
