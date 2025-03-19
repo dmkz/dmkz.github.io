@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Парсер боёв</title>
+  <title>Парсер боёв v2-001</title>
   <style>
     .input-group {
       display: flex;
@@ -240,6 +240,8 @@
       <label><input type="checkbox" id="watchFromStart" checked> Указывать на начало боя</label><br>
       <label><input type="checkbox" id="removeDate"> Удалить дату и время после сортировки</label><br>
       <label><input type="checkbox" id="removeMostCommon"> Удалить никнейм</label><br>
+      <!-- Новый чекбокс для удаления наименования врагов -->
+      <label><input type="checkbox" id="removeEnemyNames"> Удалить наименование врагов</label><br>
       <label><input type="checkbox" id="useLordswm"> Использовать my.lordswm.com вместо www.heroeswm.ru</label><br>
       <label>
         <input type="checkbox" id="numberBattles"> Пронумеровать бои
@@ -399,8 +401,6 @@
                 side = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
                 newParts.push(side);
               }
-              // Если удаляем никнейм – сторона не добавляется,
-              // так как информация о результате уже выводится отдельно.
             } else {
               // Для остальных сторон удаляем маркеры побед/поражений
               let cleanSide = side.replace(/\s*\[win\]|\s*\[lose\]/gi, '').trim();
@@ -424,6 +424,24 @@
         battles = battles.filter(battle =>
           filters.some(filterText => battle.battleResult.includes(filterText))
         );
+      }
+      
+      // Новая опция "Удалить наименование врагов"
+      let removeEnemyNames = document.getElementById("removeEnemyNames").checked;
+      if (removeEnemyNames && filters.length > 0) {
+        // Функция экранирования спецсимволов для RegExp
+        function escapeRegExp(string) {
+          return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        battles = battles.map(battle => {
+          filters.forEach(filterStr => {
+            if (filterStr) {
+              let regex = new RegExp(escapeRegExp(filterStr), "g");
+              battle = battle.replace(regex, "").trim();
+            }
+          });
+          return battle;
+        });
       }
       
       // Если выбрана нумерация, добавляем её
