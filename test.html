@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Парсер боёв v2-001</title>
+  <title>Парсер боёв v2-002</title>
   <style>
     .input-group {
       display: flex;
@@ -426,24 +426,6 @@
         );
       }
       
-      // Новая опция "Удалить наименование врагов"
-      let removeEnemyNames = document.getElementById("removeEnemyNames").checked;
-      if (removeEnemyNames && filters.length > 0) {
-        // Функция экранирования спецсимволов для RegExp
-        function escapeRegExp(string) {
-          return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        }
-        battles = battles.map(battle => {
-          filters.forEach(filterStr => {
-            if (filterStr) {
-              let regex = new RegExp(escapeRegExp(filterStr), "g");
-              battle = battle.replace(regex, "").trim();
-            }
-          });
-          return battle;
-        });
-      }
-      
       // Если выбрана нумерация, добавляем её
       let numberBattles = document.getElementById("numberBattles").checked;
       let startNumber = parseInt(document.getElementById("startNumber").value, 10) || 1;
@@ -502,6 +484,21 @@
         // Убираем маркер [win!] и заменяем последовательности из нескольких пробелов одним
         battles = battles.map(battle => battle.replace("[win!]", "").replace(/\s{2,}/g, " ").trim());
       }
+      
+    // Добавляем опцию "Удалить наименование врагов"
+    if (document.getElementById("removeEnemyNames").checked) {
+      battles = battles.map(battle => {
+        filters.forEach(filterText => {
+          if (filterText) {
+            // Экранируем специальные символы, чтобы создать корректное регулярное выражение
+            let escapedFilter = escapeRegExp(filterText);
+            let regex = new RegExp(escapedFilter, "g");
+            battle = battle.replace(regex, "").replace(/\s{2,}/g, " ").trim();
+          }
+        });
+        return battle;
+      });
+    }
       
       let includeAd = document.getElementById("includeAd").checked;
       if (includeAd) {
