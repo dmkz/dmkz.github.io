@@ -104,8 +104,8 @@
     }
     .battle-block {
       border: 1px solid #ccc;
-      padding: 8px;
-      margin-bottom: 10px;
+      padding: 4px;
+      margin-bottom: 2px; /* уменьшен отступ между блоками */
       border-radius: 5px;
     }
     .battle-text {
@@ -195,24 +195,18 @@
     #battleInput, #filterInput {
       height: 100px;
       min-height: 100px;
-      resize: vertical; /* или можно оставить auto */
+      resize: vertical;
       overflow: auto;
     }
-    /* Правило только для текстовых полей внутри блока результата (редактор) */
+    /* Для текстовых полей внутри контейнера результата (редактор) */
     #result textarea {
-      padding: 4px 6px; /* немного отступов сверху/снизу и по бокам */
-      line-height: 1.4; /* чуть больше интерлиньяж для комфорта */
-    }
-
-    /* Уменьшаем отступы и внутренние отступы у каждого блока боя */
-    .battle-block {
-      padding: 4px;       /* уменьшили внутренний отступ */
-      margin-bottom: 5px; /* уменьшили отступ снизу */
+      padding: 4px 6px 6px 6px; /* сверху 4px, снизу 6px */
+      line-height: 1.4;
     }
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-003</h2>
+  <h2>Парсер боёв v2-004</h2>
 
   <div id="faq">
     <details class="faq-item green">
