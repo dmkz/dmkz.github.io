@@ -8,13 +8,13 @@
     .input-group {
       display: flex;
       flex-direction: column;
-      align-items: center; /* Центрирование кнопки */
+      align-items: center;
       gap: 5px;
-      width: 100%; /* Чтобы кнопка была по ширине поля */
+      width: 100%;
     }
     .clear-btn {
-      width: 50%; /* Опционально: можно изменить ширину кнопки */
-      text-align: center; /* Центрирование текста в кнопке */
+      width: 50%;
+      text-align: center;
       background-color: #ff4d4d;
       color: white;
       border: none;
@@ -27,7 +27,7 @@
       background-color: #cc0000;
     }
     button {
-      background-color: #007bff; /* Синий цвет кнопок по умолчанию */
+      background-color: #007bff;
       color: white;
       border: none;
       padding: 10px 15px;
@@ -37,40 +37,42 @@
       transition: background-color 0.3s ease, transform 0.1s ease;
     }
     button:hover {
-      background-color: #0056b3; /* Темно-синий при наведении */
+      background-color: #0056b3;
     }
     button:active {
-      transform: scale(0.95); /* Эффект нажатия */
+      transform: scale(0.95);
     }
-    /* Скрытая кнопка "Развернуть настройки" */
     #toggleButton {
       display: none;
-      background-color: #6c757d; /* Серый */
+      background-color: #6c757d;
     }
     #toggleButton:hover {
       background-color: #5a6268;
     }
     @media (max-width: 600px) {
       .container {
-        flex-direction: column; /* Разместить блоки один под другим */
+        flex-direction: column;
       }
       .half {
-        width: 100%; /* Растянуть блоки на всю ширину */
+        width: 100%;
       }
       textarea {
-        height: 150px; /* Сделать текстовые поля выше для удобства */
+        height: auto;
       }
     }
     body {
       font-family: Arial, sans-serif;
-      max-width: 800px;
+      width: 100%;
       margin: auto;
       padding: 20px;
       text-align: center;
     }
     textarea {
       width: 100%;
-      height: 100px;
+      /* Начальная высота – одна строка */
+      min-height: 1.2em;
+      resize: none;
+      overflow: hidden;
       margin-bottom: 10px;
     }
     .options {
@@ -83,16 +85,16 @@
     .container {
       display: flex;
       gap: 20px;
+      flex-wrap: wrap;
     }
     .half {
       flex: 1;
+      min-width: 300px;
     }
-    /* Изменённый контейнер для результата (поддерживает HTML) */
     #result {
       text-align: left;
       white-space: pre-wrap;
     }
-    /* Стили для блоков редактора */
     .battle-block {
       border: 1px solid #ccc;
       padding: 8px;
@@ -102,7 +104,6 @@
     .battle-text {
       margin: 0 0 5px 0;
     }
-    /* Стили для FAQ */
     #faq {
       display: flex;
       gap: 20px;
@@ -142,7 +143,6 @@
       margin: 10px 0 0 0;
       text-align: justify;
     }
-    /* Стили для блока с результатом */
     #result-header,
     #bottom-actions {
       display: flex;
@@ -182,16 +182,14 @@
     #resultTitle {
       margin: 0;
     }
-    /* Стили для переключателя редактора */
     #editorToggleContainer {
       margin: 10px 0;
     }
   </style>
 </head>
 <body>
-  <h2>Парсер боёв</h2>
+  <h2>Парсер боёв v2-001</h2>
 
-  <!-- Блок FAQ с вопросами и ответами -->
   <div id="faq">
     <details class="faq-item green">
       <summary>Кто автор сайта?</summary>
@@ -250,7 +248,6 @@
         <input type="checkbox" id="filterByDate">
         Удалить бои до указанной даты
       </label>
-      <!-- Поле ввода даты и выпадающий список формата -->
       <input type="text" id="dateFilterInput" placeholder="ДД-ММ-ГГГГ ЧЧ:ММ">
       <select id="dateFormatSelect">
         <option value="DMY" selected>ДД-ММ-ГГ ЧЧ:ММ</option>
@@ -300,8 +297,21 @@
   <script>
     var editorModeEnabled = false;
     var processedBattles = [];
+    var editorData = { intro: "", descriptions: [], conclusion: "" };
 
-    // Функция для плавного скролла наверх
+    // Автоизменение высоты текстового поля
+    function autoResize(textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    }
+    function attachAutoResize(el) {
+      el.setAttribute("rows", "1");
+      el.addEventListener("input", function() {
+        autoResize(el);
+      });
+      autoResize(el);
+    }
+
     function scrollToTop() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -310,30 +320,27 @@
       document.getElementById("battleInput").value = "";
     }
 
+    // Функция копирования результата без добавления служебных слов
     function copyResult() {
+      let title = document.getElementById("resultTitle").textContent.trim();
       let textToCopy = "";
       if (editorModeEnabled) {
-        // Копируем введение, описания для каждого боя и заключение
         let intro = document.getElementById("introField") ? document.getElementById("introField").value.trim() : "";
         let conclusion = document.getElementById("conclusionField") ? document.getElementById("conclusionField").value.trim() : "";
-        if (intro) {
-          textToCopy += "Введение:\n" + intro + "\n\n";
-        }
+        let resultParts = "";
         let battleBlocks = document.querySelectorAll(".battle-block");
-        battleBlocks.forEach((block, index) => {
+        battleBlocks.forEach((block) => {
           let battleText = block.querySelector(".battle-text").textContent.trim();
           let battleDesc = block.querySelector(".battle-description").value.trim();
-          textToCopy += "Бой " + (index + 1) + ":\n" + battleText + "\n";
+          resultParts += battleText + "\n";
           if(battleDesc) {
-             textToCopy += "Описание: " + battleDesc + "\n";
+             resultParts += battleDesc + "\n";
           }
-          textToCopy += "\n";
+          resultParts += "\n";
         });
-        if (conclusion) {
-          textToCopy += "Заключение:\n" + conclusion + "\n";
-        }
+        textToCopy = title + "\n\n" + (intro ? intro + "\n\n" : "") + resultParts + (conclusion ? conclusion + "\n" : "");
       } else {
-        textToCopy = document.getElementById("result").textContent.trim();
+        textToCopy = title + "\n\n" + document.getElementById("result").textContent.trim();
       }
       
       if (!textToCopy) {
@@ -360,14 +367,12 @@
       let removeDate = document.getElementById("removeDate").checked;
       let removeMostCommon = document.getElementById("removeMostCommon").checked;
       
-      // Формируем базовый массив боёв
       for (let match of battleMatches) {
         let warId = match[1];
         let secretCode = match[2] || "";
         let [day, month, year, time] = match[3].split(/[- ]/);
         let formattedDateTime = `${year}-${month}-${day} ${time}`;
         
-        // Фильтрация боёв по дате, если выбрана опция "Удалить бои до указанной даты"
         if (document.getElementById("filterByDate").checked) {
           let userDateStr = document.getElementById("dateFilterInput").value.trim();
           if (userDateStr !== "") {
@@ -382,7 +387,6 @@
               } else if (format === "YMD") {
                 [fYear, fMonth, fDay] = datePart.split("-");
               }
-              // Преобразуем год к двухзначному формату
               let filterFormatted = `${fYear.slice(-2)}-${fMonth}-${fDay} ${timePart}`;
               if (formattedDateTime < filterFormatted) {
                 continue;
@@ -394,7 +398,6 @@
         let participantsRaw = match[4].trim();
         let sides = participantsRaw.split(/\s+vs\s+/g);
         let sidesParsed = sides.map(side => extractPlayerNames(side));
-        // Подсчитываем частоту никнеймов
         for (let side of sidesParsed) {
           for (let playerName of side) {
             if (!playerCounts[playerName]) {
@@ -404,13 +407,12 @@
           }
         }
         
-        // Определяем статус каждой стороны по наличию тега <b>
         let sidesStatus = sides.map(side => side.includes("<b>") ? "[win]" : "[lose]");
   
         let baseDomain = useLordswm ? "my.lordswm.com" : "www.heroeswm.ru";
         let battleLink = `https://${baseDomain}/warlog.php?warid=${warId}`;
         if (secretCode) battleLink += `&show=${secretCode}`;
-        if (watchFromStart) battleLink += "&lt";
+        if (watchFromStart) battleLink += "&amp;lt";
   
         let battleResult = `${formattedDateTime} ` +
             sidesParsed.map((players, index) => `${players.join(", ")} ${sidesStatus[index]}`).join(" vs ") + ` ${battleLink}`;
@@ -418,7 +420,6 @@
         battles.push({ dateTime: formattedDateTime, battleResult });
       }
       
-      // Определяем основного игрока (самый частый ник)
       let maxCount = 0;
       let mostCommonPlayer = "";
       for (let player in playerCounts) {
@@ -473,7 +474,6 @@
         });
       }
       
-      // Сортировка боёв по дате
       let sortAscending = document.getElementById("sortAscending").checked;
       battles.sort((a, b) => sortAscending ? a.dateTime.localeCompare(b.dateTime) : b.dateTime.localeCompare(a.dateTime));
       
@@ -483,7 +483,6 @@
         );
       }
       
-      // Если выбрана нумерация, добавляем её
       let numberBattles = document.getElementById("numberBattles").checked;
       let startNumber = parseInt(document.getElementById("startNumber").value, 10) || 1;
       if (numberBattles) {
@@ -525,24 +524,20 @@
         });
       }
       
-      // Преобразуем объекты в строки, убираем лишние запятые и корректируем пробелы
       battles = battles.map(battle => battle.battleResult);
       battles = battles.map(battle => battle.replace(/,\s+vs/g, " vs").trim());
       battles = battles.filter(battle => battle.trim().length > 0);
           
-      // Для фильтрации выигрышей заменяем маркер [win] на [win!]
       battles = battles.map(battle => battle.replace("[win]", "[win!]"));
       if (onlyWins) {
         battles = battles.filter(battle => battle.includes("[win!]"));
         battles = battles.map(battle => battle.replace("[win!]", "").replace(/\s{2,}/g, " ").trim());
       }
       
-      // Добавляем опцию "Удалить наименование врагов с ивента"
       if (document.getElementById("removeEnemyNames").checked) {
         battles = battles.map(battle => {
           filters.forEach(filterText => {
             if (filterText) {
-              // Экранируем специальные символы, чтобы создать корректное регулярное выражение
               let escapedFilter = escapeRegExp(filterText);
               let regex = new RegExp(escapedFilter, "g");
               battle = battle.replace(regex, "").replace(/\s{2,}/g, " ").trim();
@@ -552,8 +547,7 @@
         });
       }
       
-      let includeAd = document.getElementById("includeAd").checked;
-      if (includeAd) {
+      if (document.getElementById("includeAd").checked) {
         let currentURL = window.location.href;
         battles.push(`\nСписок боев сгенерирован здесь: ${currentURL}`);
       }
@@ -586,16 +580,16 @@
       let resultDiv = document.getElementById("result");
       if (editorModeEnabled) {
         resultDiv.innerHTML = "";
-        // Добавляем поле для введения
-        let introLabel = document.createElement("h3");
-        introLabel.textContent = "Введение:";
-        resultDiv.appendChild(introLabel);
         let introField = document.createElement("textarea");
         introField.id = "introField";
         introField.placeholder = "Введите введение...";
+        attachAutoResize(introField);
+        if(editorData.intro) {
+          introField.value = editorData.intro;
+          autoResize(introField);
+        }
         resultDiv.appendChild(introField);
         
-        // Для каждого боя создаём отдельный блок с кликабельной ссылкой и полем описания
         battles.forEach((battle, index) => {
           let battleBlock = document.createElement("div");
           battleBlock.className = "battle-block";
@@ -610,20 +604,25 @@
           let descField = document.createElement("textarea");
           descField.className = "battle-description";
           descField.placeholder = "Введите описание боя...";
+          attachAutoResize(descField);
+          if(editorData.descriptions[index]) {
+            descField.value = editorData.descriptions[index];
+            autoResize(descField);
+          }
           battleBlock.appendChild(descField);
           resultDiv.appendChild(battleBlock);
         });
         
-        // Добавляем поле для заключения
-        let conclusionLabel = document.createElement("h3");
-        conclusionLabel.textContent = "Заключение:";
-        resultDiv.appendChild(conclusionLabel);
         let conclusionField = document.createElement("textarea");
         conclusionField.id = "conclusionField";
         conclusionField.placeholder = "Введите заключение...";
+        attachAutoResize(conclusionField);
+        if(editorData.conclusion) {
+          conclusionField.value = editorData.conclusion;
+          autoResize(conclusionField);
+        }
         resultDiv.appendChild(conclusionField);
       } else {
-        // Если редактор выключен – выводим простой текст
         resultDiv.innerHTML = "<pre>" + (battles.join("\n") || "Ничего не найдено") + "</pre>";
       }
     }
@@ -636,7 +635,7 @@
       let watchFromStart = document.getElementById("watchFromStart").checked;
   
       let battles = extractBattles(html, filters, doFilter, onlyWins, watchFromStart);
-      processedBattles = battles; // Сохраняем для повторного рендеринга при переключении редактора
+      processedBattles = battles;
       renderBattles(battles);
       
       document.getElementById("inputContainer").style.display = "none";
@@ -659,6 +658,18 @@
       }
     }
     function toggleEditorMode() {
+      if (editorModeEnabled) {
+        let introField = document.getElementById("introField");
+        let conclusionField = document.getElementById("conclusionField");
+        editorData.intro = introField ? introField.value : "";
+        editorData.conclusion = conclusionField ? conclusionField.value : "";
+        let battleBlocks = document.querySelectorAll(".battle-block");
+        editorData.descriptions = [];
+        battleBlocks.forEach(block => {
+          let descField = block.querySelector(".battle-description");
+          editorData.descriptions.push(descField ? descField.value : "");
+        });
+      }
       editorModeEnabled = !editorModeEnabled;
       let btn = document.getElementById("editorToggleButton");
       if (editorModeEnabled) {
@@ -668,7 +679,6 @@
         btn.textContent = "Включить редактор";
         btn.style.backgroundColor = "green";
       }
-      // Если бои уже обработаны, перерисовываем результат с учетом нового режима
       if (processedBattles.length > 0) {
         renderBattles(processedBattles);
       }
