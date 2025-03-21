@@ -210,7 +210,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-007</h2>
+  <h2>Парсер боёв v2-008</h2>
 
   <div id="faq">
     <details class="faq-item green">
@@ -297,14 +297,13 @@
     <button onclick="processBattles()">Обработать</button>
   </div>
 
-  <!-- Переключатель режима редактора -->
-  <div id="editorToggleContainer">
-    <button id="editorToggleButton" onclick="toggleEditorMode()" style="background-color: green;">Включить редактор</button>
-  </div>
-
   <button id="toggleButton" onclick="toggleInput()" style="display: none;">Развернуть настройки</button>
 
   <div id="result-header">
+    <!-- Переключатель режима редактора -->
+    <div id="editorToggleContainer">
+      <button id="editorToggleButton" onclick="toggleEditorMode()" style="background-color: green;">Включить редактор</button>
+    </div>
     <button id="copyButtonTop" class="action-btn" onclick="copyResult()">Скопировать результат</button>
     <h3 id="resultTitle">Результат:</h3>
   </div>
@@ -604,7 +603,7 @@
         resultDiv.innerHTML = "";
         let introField = document.createElement("textarea");
         introField.id = "introField";
-        introField.placeholder = "Введите введение...";
+        introField.placeholder = "Напишите введение (если хотите)";
         attachAutoResize(introField);
         if(editorData.intro) {
           introField.value = editorData.intro;
@@ -625,7 +624,7 @@
           battleBlock.appendChild(battleText);
           let descField = document.createElement("textarea");
           descField.className = "battle-description";
-          descField.placeholder = "Введите описание боя...";
+          descField.placeholder = "Опишите ваш бой (если хотите)";
           attachAutoResize(descField);
           if(editorData.descriptions[index]) {
             descField.value = editorData.descriptions[index];
@@ -637,7 +636,7 @@
         
         let conclusionField = document.createElement("textarea");
         conclusionField.id = "conclusionField";
-        conclusionField.placeholder = "Введите заключение...";
+        conclusionField.placeholder = "Напишите заключение (если хотите)";
         attachAutoResize(conclusionField);
         if(editorData.conclusion) {
           conclusionField.value = editorData.conclusion;
