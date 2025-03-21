@@ -657,11 +657,12 @@
         introField.placeholder = "Напишите введение...";
         attachAutoResize(introField);
         introField.addEventListener("input", saveEditorData);
+        resultDiv.appendChild(introField);
         if (editorData.intro) {
           introField.value = editorData.intro;
-          autoResize(introField);
+          // Вызываем autoResize после добавления в DOM
+          setTimeout(() => autoResize(introField), 0);
         }
-        resultDiv.appendChild(introField);
         
         // Отрисовка каждого боя
         battles.forEach((battle, index) => {
@@ -682,11 +683,11 @@
           descField.placeholder = "Напишите описание боя...";
           attachAutoResize(descField);
           descField.addEventListener("input", saveEditorData);
+          battleBlock.appendChild(descField);
           if (editorData.descriptions[index]) {
             descField.value = editorData.descriptions[index];
-            autoResize(descField);
+            setTimeout(() => autoResize(descField), 0);
           }
-          battleBlock.appendChild(descField);
           resultDiv.appendChild(battleBlock);
         });
         
@@ -696,11 +697,12 @@
         conclusionField.placeholder = "Напишите заключение...";
         attachAutoResize(conclusionField);
         conclusionField.addEventListener("input", saveEditorData);
+        resultDiv.appendChild(conclusionField);
         if (editorData.conclusion) {
           conclusionField.value = editorData.conclusion;
-          autoResize(conclusionField);
+          setTimeout(() => autoResize(conclusionField), 0);
         }
-        resultDiv.appendChild(conclusionField);
+        
         
         // Добавляем блок ссылки на генератор после поля заключения
         if (document.getElementById("includeAd").checked) {
