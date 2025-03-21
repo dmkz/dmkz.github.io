@@ -105,11 +105,14 @@
     .battle-block {
       border: 1px solid #ccc;
       padding: 4px;
-      margin-bottom: 2px; /* уменьшен отступ между блоками */
+      margin-bottom: 2px;
       border-radius: 5px;
+      display: flex;             /* добавляем */
+      flex-direction: column;    /* вертикально */
+      gap: 2px;                  /* небольшой зазор между элементами */
     }
     .battle-text {
-      margin: 0 0 5px 0;
+      margin: 0 0 2px 0;
     }
     #faq {
       display: flex;
@@ -203,10 +206,13 @@
       padding: 4px 6px 6px 6px; /* сверху 4px, снизу 6px */
       line-height: 1.4;
     }
+    #result textarea::placeholder {
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-004</h2>
+  <h2>Парсер боёв v2-005</h2>
 
   <div id="faq">
     <details class="faq-item green">
