@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Парсер боёв</title>
   <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
     .input-group {
       display: flex;
       flex-direction: column;
@@ -185,10 +192,16 @@
     #editorToggleContainer {
       margin: 10px 0;
     }
+    #battleInput, #filterInput {
+      height: 100px;
+      min-height: 100px;
+      resize: vertical; /* или можно оставить auto */
+      overflow: auto;
+    }
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-001</h2>
+  <h2>Парсер боёв v2-002</h2>
 
   <div id="faq">
     <details class="faq-item green">
