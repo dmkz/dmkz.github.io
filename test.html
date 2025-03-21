@@ -210,7 +210,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-014</h2>
+  <h2>Парсер боёв v2-015</h2>
 
   <div id="faq">
     <details class="faq-item green">
@@ -663,8 +663,15 @@
           adDiv.style.borderRadius = "5px";
           adDiv.style.padding = "4px 6px";
           adDiv.style.marginTop = "4px";
-          let currentURL = window.location.href;
-          adDiv.textContent = "Список боев сгенерирован здесь: " + currentURL;
+          
+          // Создаём элемент ссылки
+          let linkElement = document.createElement("a");
+          linkElement.href = window.location.href; // URL генератора
+          linkElement.target = "_blank";           // Открывать в новой вкладке (если нужно)
+          linkElement.textContent = "Список боев сгенерирован здесь: " + window.location.href;
+          
+          // Добавляем ссылку в блок
+          adDiv.appendChild(linkElement);
           resultDiv.appendChild(adDiv);
         }
       } else {
