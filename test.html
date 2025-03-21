@@ -210,7 +210,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-008</h2>
+  <h2>Парсер боёв v2-009</h2>
 
   <div id="faq">
     <details class="faq-item green">
@@ -297,9 +297,8 @@
     <button onclick="processBattles()">Обработать</button>
   </div>
 
-  <button id="toggleButton" onclick="toggleInput()" style="display: none;">Развернуть настройки</button>
-
   <div id="result-header">
+    <button id="toggleButton" onclick="toggleInput()" style="display: none;">Развернуть настройки</button>
     <!-- Переключатель режима редактора -->
     <div id="editorToggleContainer">
       <button id="editorToggleButton" onclick="toggleEditorMode()" style="background-color: green;">Включить редактор</button>
@@ -346,20 +345,19 @@
       let title = document.getElementById("resultTitle").textContent.trim();
       let textToCopy = "";
       if (editorModeEnabled) {
+        let parts = [];
         let intro = document.getElementById("introField") ? document.getElementById("introField").value.trim() : "";
-        let conclusion = document.getElementById("conclusionField") ? document.getElementById("conclusionField").value.trim() : "";
-        let resultParts = "";
+        if (intro) parts.push(intro);
         let battleBlocks = document.querySelectorAll(".battle-block");
-        battleBlocks.forEach((block) => {
+        battleBlocks.forEach(block => {
           let battleText = block.querySelector(".battle-text").textContent.trim();
           let battleDesc = block.querySelector(".battle-description").value.trim();
-          resultParts += battleText + "\n";
-          if(battleDesc) {
-             resultParts += battleDesc + "\n";
-          }
-          resultParts += "\n";
+          if (battleText) parts.push(battleText);
+          if (battleDesc) parts.push(battleDesc);
         });
-        textToCopy = title + "\n\n" + (intro ? intro + "\n\n" : "") + resultParts + (conclusion ? conclusion + "\n" : "");
+        let conclusion = document.getElementById("conclusionField") ? document.getElementById("conclusionField").value.trim() : "";
+        if (conclusion) parts.push(conclusion);
+        textToCopy = title + "\n\n" + parts.join("\n\n");
       } else {
         textToCopy = title + "\n\n" + document.getElementById("result").textContent.trim();
       }
@@ -376,6 +374,7 @@
         alert("Ошибка при копировании!");
       });
     }
+
   
     function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
       html = cleanSpecialSymbols(html);
