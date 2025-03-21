@@ -233,7 +233,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-024</h2>
+  <h2>Парсер боёв v2-025</h2>
 
   <div id="faq">
     <details class="faq-item green">
@@ -731,6 +731,8 @@
     }
   
     function processBattles() {
+      // Сбрасываем данные редактора для новой обработки
+      editorData = { intro: "", descriptions: [], conclusion: "" };
       let html = document.getElementById("battleInput").value;
       let filters = document.getElementById("filterInput").value.split('\n').map(f => f.trim()).filter(f => f);
       let doFilter = document.getElementById("doFilter").checked;
