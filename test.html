@@ -233,7 +233,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-021</h2>
+  <h2>Парсер боёв v2-023</h2>
 
   <div id="faq">
     <details class="faq-item green">
@@ -361,6 +361,27 @@
   
     function clearInput() {
       document.getElementById("battleInput").value = "";
+    }
+    
+    function saveEditorData() {
+      // Считываем введение
+      const introField = document.getElementById("introField");
+      editorData.intro = introField ? introField.value : "";
+
+      // Считываем описания боёв
+      const battleBlocks = document.querySelectorAll(".battle-block");
+      editorData.descriptions = [];
+      battleBlocks.forEach(block => {
+        const descField = block.querySelector(".battle-description");
+        editorData.descriptions.push(descField ? descField.value : "");
+      });
+
+      // Считываем заключение
+      const conclusionField = document.getElementById("conclusionField");
+      editorData.conclusion = conclusionField ? conclusionField.value : "";
+
+      // Сохраняем весь объект в localStorage
+      saveState();
     }
 
     // Функция копирования результата без добавления служебных слов
@@ -635,6 +656,7 @@
         introField.id = "introField";
         introField.placeholder = "Напишите введение...";
         attachAutoResize(introField);
+        introField.addEventListener("input", saveEditorData);
         if (editorData.intro) {
           introField.value = editorData.intro;
           autoResize(introField);
@@ -659,6 +681,7 @@
           descField.className = "battle-description";
           descField.placeholder = "Напишите описание боя...";
           attachAutoResize(descField);
+          descField.addEventListener("input", saveEditorData);
           if (editorData.descriptions[index]) {
             descField.value = editorData.descriptions[index];
             autoResize(descField);
@@ -672,6 +695,7 @@
         conclusionField.id = "conclusionField";
         conclusionField.placeholder = "Напишите заключение...";
         attachAutoResize(conclusionField);
+        conclusionField.addEventListener("input", saveEditorData);
         if (editorData.conclusion) {
           conclusionField.value = editorData.conclusion;
           autoResize(conclusionField);
@@ -835,6 +859,7 @@
       const stateStr = localStorage.getItem("savedState");
       if (stateStr) {
         const state = JSON.parse(stateStr);
+        // Восстанавливаем сохранённое HTML-содержимое результата (для обычного режима)
         document.getElementById("result").innerHTML = state.resultHTML;
         editorModeEnabled = state.editorModeEnabled;
         processedBattles = state.processedBattles;
@@ -843,8 +868,14 @@
         let btn = document.getElementById("editorToggleButton");
         btn.textContent = state.editorToggleButtonText;
         btn.className = state.editorToggleButtonClass;
+        
+        // Если редактор включён, заново отрисовываем бои, чтобы динамические поля (textarea) восстановились
+        if (editorModeEnabled && processedBattles.length > 0) {
+          renderBattles(processedBattles);
+        }
       }
     }
+
 
     document.addEventListener("DOMContentLoaded", () => {
       loadOptions();
