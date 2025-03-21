@@ -210,7 +210,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-010</h2>
+  <h2>Парсер боёв v2-011</h2>
 
   <div id="faq">
     <details class="faq-item green">
@@ -355,11 +355,16 @@
           if (battleText) parts.push(battleText);
           if (battleDesc) parts.push(battleDesc);
         });
+        // Если опция включена, добавляем текст ссылки
+        if (document.getElementById("includeAd").checked) {
+          let currentURL = window.location.href;
+          parts.push("Список боев сгенерирован здесь: " + currentURL);
+        }
         let conclusion = document.getElementById("conclusionField") ? document.getElementById("conclusionField").value.trim() : "";
         if (conclusion) parts.push(conclusion);
-        textToCopy = title + "\n" + parts.join("\n");
+        textToCopy = title + "\n\n" + parts.join("\n\n");
       } else {
-        textToCopy = title + "\n" + document.getElementById("result").textContent.trim();
+        textToCopy = title + "\n\n" + document.getElementById("result").textContent.trim();
       }
       
       if (!textToCopy) {
@@ -600,32 +605,37 @@
       let resultDiv = document.getElementById("result");
       if (editorModeEnabled) {
         resultDiv.innerHTML = "";
+        
+        // Отрисовка поля введения
         let introField = document.createElement("textarea");
         introField.id = "introField";
-        introField.placeholder = "Напишите введение (если хотите)";
+        introField.placeholder = "Введите введение...";
         attachAutoResize(introField);
-        if(editorData.intro) {
+        if (editorData.intro) {
           introField.value = editorData.intro;
           autoResize(introField);
         }
         resultDiv.appendChild(introField);
         
+        // Отрисовка каждого боя
         battles.forEach((battle, index) => {
           let battleBlock = document.createElement("div");
           battleBlock.className = "battle-block";
           let battleText = document.createElement("p");
           battleText.className = "battle-text";
+          // Преобразуем URL в кликабельную ссылку
           let urlRegex = /(https?:\/\/\S+)/;
           let modifiedBattle = battle.replace(urlRegex, function(match) {
-              return `<a href="${match}" target="_blank">${match}</a>`;
+            return `<a href="${match}" target="_blank">${match}</a>`;
           });
           battleText.innerHTML = modifiedBattle;
           battleBlock.appendChild(battleText);
+          
           let descField = document.createElement("textarea");
           descField.className = "battle-description";
-          descField.placeholder = "Опишите ваш бой (если хотите)";
+          descField.placeholder = "Введите описание боя...";
           attachAutoResize(descField);
-          if(editorData.descriptions[index]) {
+          if (editorData.descriptions[index]) {
             descField.value = editorData.descriptions[index];
             autoResize(descField);
           }
@@ -633,11 +643,25 @@
           resultDiv.appendChild(battleBlock);
         });
         
+        // Если включена опция "Добавить ссылку на генератор", отрисовываем отдельный блок
+        if (document.getElementById("includeAd").checked) {
+          let adDiv = document.createElement("div");
+          adDiv.className = "ad-link";
+          adDiv.style.border = "1px solid #ccc";
+          adDiv.style.borderRadius = "5px";
+          adDiv.style.padding = "4px 6px";
+          adDiv.style.marginTop = "4px";
+          let currentURL = window.location.href;
+          adDiv.textContent = "Список боев сгенерирован здесь: " + currentURL;
+          resultDiv.appendChild(adDiv);
+        }
+        
+        // Отрисовка поля заключения
         let conclusionField = document.createElement("textarea");
         conclusionField.id = "conclusionField";
-        conclusionField.placeholder = "Напишите заключение (если хотите)";
+        conclusionField.placeholder = "Введите заключение...";
         attachAutoResize(conclusionField);
-        if(editorData.conclusion) {
+        if (editorData.conclusion) {
           conclusionField.value = editorData.conclusion;
           autoResize(conclusionField);
         }
@@ -646,6 +670,7 @@
         resultDiv.innerHTML = "<pre>" + (battles.join("\n") || "Ничего не найдено") + "</pre>";
       }
     }
+
   
     function processBattles() {
       let html = document.getElementById("battleInput").value;
