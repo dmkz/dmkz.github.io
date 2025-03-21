@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Парсер боёв v2-007</title>
+  <title>Парсер боёв</title>
   <style>
     .input-group {
       display: flex;
@@ -87,9 +87,20 @@
     .half {
       flex: 1;
     }
+    /* Изменённый контейнер для результата (поддерживает HTML) */
     #result {
-      text-align: left; /* Выравнивание текста по левому краю */
-      white-space: pre-wrap; /* Перенос строк внутри <pre> */
+      text-align: left;
+      white-space: pre-wrap;
+    }
+    /* Стили для блоков редактора */
+    .battle-block {
+      border: 1px solid #ccc;
+      padding: 8px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+    }
+    .battle-text {
+      margin: 0 0 5px 0;
     }
     /* Стили для FAQ */
     #faq {
@@ -171,34 +182,38 @@
     #resultTitle {
       margin: 0;
     }
+    /* Стили для переключателя редактора */
+    #editorToggleContainer {
+      margin: 10px 0;
+    }
   </style>
 </head>
 <body>
   <h2>Парсер боёв</h2>
 
-  <div id="inputContainer">
-    <!-- Блок FAQ с вопросами и ответами -->
-    <div id="faq">
-      <details class="faq-item green">
-        <summary>Кто автор сайта?</summary>
-        <p>
-          Автор сайта — <a href="https://www.heroeswm.ru/pl_info.php?id=2829340" target="_blank" rel="noopener noreferrer">oxotnik102rus</a>. Если вы обнаружили ошибку или у вас есть идея для новой функции, напишите мне в личку.
-        </p>
-      </details>
-      <details class="faq-item red">
-        <summary>Ты украдешь мои бои?</summary>
-        <p>
-          Нет. Код работает исключительно на стороне клиента и не передает никакую информацию на сервер, поэтому я не украду ваши бои.
-        </p>
-        <p>
-          Код размещен с помощью <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a> — платформы, которая не поддерживает серверный код, что обеспечивает безопасность ваших данных.
-        </p>
-        <p>
-          Если у вас возникают сомнения, вы можете посмотреть исходный код сайта в браузере или по <a href="https://github.com/dmkz/dmkz.github.io" target="_blank" rel="noopener noreferrer">ссылке</a>.
-        </p>
-      </details>
-    </div>
+  <!-- Блок FAQ с вопросами и ответами -->
+  <div id="faq">
+    <details class="faq-item green">
+      <summary>Кто автор сайта?</summary>
+      <p>
+        Автор сайта — <a href="https://www.heroeswm.ru/pl_info.php?id=2829340" target="_blank" rel="noopener noreferrer">oxotnik102rus</a>. Если вы обнаружили ошибку или у вас есть идея для новой функции, напишите мне в личку.
+      </p>
+    </details>
+    <details class="faq-item red">
+      <summary>Ты украдешь мои бои?</summary>
+      <p>
+        Нет. Код работает исключительно на стороне клиента и не передает никакую информацию на сервер, поэтому я не украду ваши бои.
+      </p>
+      <p>
+        Код размещен с помощью <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a> — платформы, которая не поддерживает серверный код, что обеспечивает безопасность ваших данных.
+      </p>
+      <p>
+        Если у вас возникают сомнения, вы можете посмотреть исходный код сайта в браузере или по <a href="https://github.com/dmkz/dmkz.github.io" target="_blank" rel="noopener noreferrer">ссылке</a>.
+      </p>
+    </details>
+  </div>
 
+  <div id="inputContainer">
     <div class="container">
       <div class="half">
         <h3>Входные данные (HTML)</h3>
@@ -263,6 +278,11 @@
     <button onclick="processBattles()">Обработать</button>
   </div>
 
+  <!-- Переключатель режима редактора -->
+  <div id="editorToggleContainer">
+    <button id="editorToggleButton" onclick="toggleEditorMode()" style="background-color: green;">Включить редактор</button>
+  </div>
+
   <button id="toggleButton" onclick="toggleInput()" style="display: none;">Развернуть настройки</button>
 
   <div id="result-header">
@@ -270,7 +290,7 @@
     <h3 id="resultTitle">Результат:</h3>
   </div>
 
-  <pre id="result"></pre>
+  <div id="result"></div>
 
   <div id="bottom-actions">
     <button id="scrollTopButton" class="action-btn scroll-btn" onclick="scrollToTop()">Подняться наверх</button>
@@ -278,6 +298,9 @@
   </div>
 
   <script>
+    var editorModeEnabled = false;
+    var processedBattles = [];
+
     // Функция для плавного скролла наверх
     function scrollToTop() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -286,18 +309,38 @@
     function clearInput() {
       document.getElementById("battleInput").value = "";
     }
+
     function copyResult() {
-      let resultText = document.getElementById("result").textContent.trim();
-      let mostCommonName = document.getElementById("resultTitle").textContent.trim();
-      let removeMostCommon = document.getElementById('removeMostCommon').checked;
-  
-      if (!resultText) {
+      let textToCopy = "";
+      if (editorModeEnabled) {
+        // Копируем введение, описания для каждого боя и заключение
+        let intro = document.getElementById("introField") ? document.getElementById("introField").value.trim() : "";
+        let conclusion = document.getElementById("conclusionField") ? document.getElementById("conclusionField").value.trim() : "";
+        if (intro) {
+          textToCopy += "Введение:\n" + intro + "\n\n";
+        }
+        let battleBlocks = document.querySelectorAll(".battle-block");
+        battleBlocks.forEach((block, index) => {
+          let battleText = block.querySelector(".battle-text").textContent.trim();
+          let battleDesc = block.querySelector(".battle-description").value.trim();
+          textToCopy += "Бой " + (index + 1) + ":\n" + battleText + "\n";
+          if(battleDesc) {
+             textToCopy += "Описание: " + battleDesc + "\n";
+          }
+          textToCopy += "\n";
+        });
+        if (conclusion) {
+          textToCopy += "Заключение:\n" + conclusion + "\n";
+        }
+      } else {
+        textToCopy = document.getElementById("result").textContent.trim();
+      }
+      
+      if (!textToCopy) {
         alert("Результат пуст, нечего копировать!");
         return;
       }
-  
-      let textToCopy = removeMostCommon ? `${mostCommonName}\n${resultText}` : resultText;
-  
+      
       navigator.clipboard.writeText(textToCopy).then(() => {
         alert("Результат скопирован в буфер обмена!");
       }).catch(err => {
@@ -514,7 +557,7 @@
         let currentURL = window.location.href;
         battles.push(`\nСписок боев сгенерирован здесь: ${currentURL}`);
       }
-      return battles.join("\n");
+      return battles;
     }
   
     function extractPlayerNames(text) {
@@ -539,6 +582,52 @@
       return doc.documentElement.textContent;
     }
   
+    function renderBattles(battles) {
+      let resultDiv = document.getElementById("result");
+      if (editorModeEnabled) {
+        resultDiv.innerHTML = "";
+        // Добавляем поле для введения
+        let introLabel = document.createElement("h3");
+        introLabel.textContent = "Введение:";
+        resultDiv.appendChild(introLabel);
+        let introField = document.createElement("textarea");
+        introField.id = "introField";
+        introField.placeholder = "Введите введение...";
+        resultDiv.appendChild(introField);
+        
+        // Для каждого боя создаём отдельный блок с кликабельной ссылкой и полем описания
+        battles.forEach((battle, index) => {
+          let battleBlock = document.createElement("div");
+          battleBlock.className = "battle-block";
+          let battleText = document.createElement("p");
+          battleText.className = "battle-text";
+          let urlRegex = /(https?:\/\/\S+)/;
+          let modifiedBattle = battle.replace(urlRegex, function(match) {
+              return `<a href="${match}" target="_blank">${match}</a>`;
+          });
+          battleText.innerHTML = modifiedBattle;
+          battleBlock.appendChild(battleText);
+          let descField = document.createElement("textarea");
+          descField.className = "battle-description";
+          descField.placeholder = "Введите описание боя...";
+          battleBlock.appendChild(descField);
+          resultDiv.appendChild(battleBlock);
+        });
+        
+        // Добавляем поле для заключения
+        let conclusionLabel = document.createElement("h3");
+        conclusionLabel.textContent = "Заключение:";
+        resultDiv.appendChild(conclusionLabel);
+        let conclusionField = document.createElement("textarea");
+        conclusionField.id = "conclusionField";
+        conclusionField.placeholder = "Введите заключение...";
+        resultDiv.appendChild(conclusionField);
+      } else {
+        // Если редактор выключен – выводим простой текст
+        resultDiv.innerHTML = "<pre>" + (battles.join("\n") || "Ничего не найдено") + "</pre>";
+      }
+    }
+  
     function processBattles() {
       let html = document.getElementById("battleInput").value;
       let filters = document.getElementById("filterInput").value.split('\n').map(f => f.trim()).filter(f => f);
@@ -546,8 +635,9 @@
       let onlyWins = document.getElementById("onlyWins").checked;
       let watchFromStart = document.getElementById("watchFromStart").checked;
   
-      let result = extractBattles(html, filters, doFilter, onlyWins, watchFromStart);
-      document.getElementById("result").textContent = result || "Ничего не найдено";
+      let battles = extractBattles(html, filters, doFilter, onlyWins, watchFromStart);
+      processedBattles = battles; // Сохраняем для повторного рендеринга при переключении редактора
+      renderBattles(battles);
       
       document.getElementById("inputContainer").style.display = "none";
       document.getElementById("toggleButton").style.display = "block";
@@ -566,6 +656,21 @@
       } else {
         inputContainer.style.display = "none";
         toggleButton.textContent = "Развернуть настройки";
+      }
+    }
+    function toggleEditorMode() {
+      editorModeEnabled = !editorModeEnabled;
+      let btn = document.getElementById("editorToggleButton");
+      if (editorModeEnabled) {
+        btn.textContent = "Выключить редактор";
+        btn.style.backgroundColor = "red";
+      } else {
+        btn.textContent = "Включить редактор";
+        btn.style.backgroundColor = "green";
+      }
+      // Если бои уже обработаны, перерисовываем результат с учетом нового режима
+      if (processedBattles.length > 0) {
+        renderBattles(processedBattles);
       }
     }
     function saveOptions() {
