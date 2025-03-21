@@ -233,7 +233,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-020</h2>
+  <h2>Парсер боёв v2-021</h2>
 
   <div id="faq">
     <details class="faq-item green">
@@ -720,6 +720,7 @@
       document.getElementById("inputContainer").style.display = "none";
       document.getElementById("toggleButton").style.display = "block";
       document.getElementById("toggleButton").textContent = "Развернуть настройки";
+      saveState(); // Сохраняем текущее состояние
     }
     function escapeRegExp(string) {
       return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -766,6 +767,7 @@
       
       if (processedBattles.length > 0) {
         renderBattles(processedBattles);
+        saveState(); // Сохраняем состояние после переключения редактора
       }
     }
 
@@ -817,9 +819,36 @@
         }
       }
     }
-  
+    function saveState() {
+      const state = {
+        resultHTML: document.getElementById("result").innerHTML,
+        editorModeEnabled: editorModeEnabled,
+        processedBattles: processedBattles,
+        editorData: editorData,
+        resultTitle: document.getElementById("resultTitle").textContent,
+        editorToggleButtonText: document.getElementById("editorToggleButton").textContent,
+        editorToggleButtonClass: document.getElementById("editorToggleButton").className
+      };
+      localStorage.setItem("savedState", JSON.stringify(state));
+    }
+    function loadState() {
+      const stateStr = localStorage.getItem("savedState");
+      if (stateStr) {
+        const state = JSON.parse(stateStr);
+        document.getElementById("result").innerHTML = state.resultHTML;
+        editorModeEnabled = state.editorModeEnabled;
+        processedBattles = state.processedBattles;
+        editorData = state.editorData;
+        document.getElementById("resultTitle").textContent = state.resultTitle;
+        let btn = document.getElementById("editorToggleButton");
+        btn.textContent = state.editorToggleButtonText;
+        btn.className = state.editorToggleButtonClass;
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       loadOptions();
+      loadState(); // Восстанавливаем сохранённое состояние
       document.querySelectorAll(".options input[type='checkbox']").forEach(checkbox => {
         checkbox.addEventListener("change", saveOptions);
       });
