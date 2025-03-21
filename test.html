@@ -233,7 +233,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-019</h2>
+  <h2>Парсер боёв v2-020</h2>
 
   <div id="faq">
     <details class="faq-item green">
@@ -633,7 +633,7 @@
         // Отрисовка поля введения
         let introField = document.createElement("textarea");
         introField.id = "introField";
-        introField.placeholder = "Введите введение...";
+        introField.placeholder = "Напишите введение...";
         attachAutoResize(introField);
         if (editorData.intro) {
           introField.value = editorData.intro;
@@ -657,7 +657,7 @@
           
           let descField = document.createElement("textarea");
           descField.className = "battle-description";
-          descField.placeholder = "Введите описание боя...";
+          descField.placeholder = "Напишите описание боя...";
           attachAutoResize(descField);
           if (editorData.descriptions[index]) {
             descField.value = editorData.descriptions[index];
@@ -670,7 +670,7 @@
         // Отрисовка поля заключения
         let conclusionField = document.createElement("textarea");
         conclusionField.id = "conclusionField";
-        conclusionField.placeholder = "Введите заключение...";
+        conclusionField.placeholder = "Напишите заключение...";
         attachAutoResize(conclusionField);
         if (editorData.conclusion) {
           conclusionField.value = editorData.conclusion;
