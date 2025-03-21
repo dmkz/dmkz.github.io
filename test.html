@@ -207,10 +207,33 @@
     #result textarea::placeholder {
       overflow: hidden;
     }
+    /* Для кнопки "Подняться наверх" (класс .scroll-btn) */
+    .scroll-btn {
+      background-color: #4CAF50; /* начальный зелёный */
+    }
+    .scroll-btn:hover {
+      background-color: #388E3C; /* тёмно-зелёный */
+    }
+
+    /* Для кнопки "Включить редактор" в выключенном состоянии */
+    .editor-off {
+      background-color: #4CAF50; /* тот же зелёный */
+    }
+    .editor-off:hover {
+      background-color: #388E3C; /* тёмно-зелёный */
+    }
+
+    /* Для кнопки "Выключить редактор" (когда редактор включён) */
+    .editor-on {
+      background-color: #F44336; /* красный */
+    }
+    .editor-on:hover {
+      background-color: #D32F2F; /* тёмно-красный */
+    }
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-017</h2>
+  <h2>Парсер боёв v2-018</h2>
 
   <div id="faq">
     <details class="faq-item green">
@@ -301,7 +324,7 @@
     <button id="toggleButton" onclick="toggleInput()" style="display: none;">Развернуть настройки</button>
     <!-- Переключатель режима редактора -->
     <div id="editorToggleContainer">
-      <button id="editorToggleButton" onclick="toggleEditorMode()" style="background-color: green;">Включить редактор</button>
+      <button id="editorToggleButton" onclick="toggleEditorMode()" class="editor-off" >Включить редактор</button>
     </div>
     <button id="copyButtonTop" class="action-btn" onclick="copyResult()">Скопировать результат</button>
     <h3 id="resultTitle">Результат:</h3>
@@ -714,6 +737,7 @@
       }
     }
     function toggleEditorMode() {
+      // Сохранение состояния редактора (если нужно) перед переключением
       if (editorModeEnabled) {
         let introField = document.getElementById("introField");
         let conclusionField = document.getElementById("conclusionField");
@@ -726,19 +750,25 @@
           editorData.descriptions.push(descField ? descField.value : "");
         });
       }
+      
+      // Переключаем режим редактора
       editorModeEnabled = !editorModeEnabled;
       let btn = document.getElementById("editorToggleButton");
       if (editorModeEnabled) {
         btn.textContent = "Выключить редактор";
-        btn.style.backgroundColor = "red";
+        btn.classList.remove("editor-off");
+        btn.classList.add("editor-on");
       } else {
         btn.textContent = "Включить редактор";
-        btn.style.backgroundColor = "green";
+        btn.classList.remove("editor-on");
+        btn.classList.add("editor-off");
       }
+      
       if (processedBattles.length > 0) {
         renderBattles(processedBattles);
       }
     }
+
     function saveOptions() {
       let checkboxes = document.querySelectorAll(".options input[type='checkbox']");
       checkboxes.forEach(checkbox => {
