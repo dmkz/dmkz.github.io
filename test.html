@@ -102,6 +102,15 @@
       text-align: left;
       white-space: pre-wrap;
     }
+    .battle-block {
+      border: 1px solid #ccc;
+      padding: 4px;
+      margin-bottom: 2px; /* уменьшен отступ между блоками */
+      border-radius: 5px;
+    }
+    .battle-text {
+      margin: 0 0 5px 0;
+    }
     #faq {
       display: flex;
       gap: 20px;
@@ -189,38 +198,15 @@
       resize: vertical;
       overflow: auto;
     }
-
-    /* --- Дополнительные правки --- */
-
-    /* Уменьшаем внутренний и внешний отступы в блоках боя */
-    .battle-block {
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      padding: 4px;
-      margin-bottom: 2px; /* более плотное прилегание */
-      display: flex;
-      flex-direction: column;
-      gap: 2px; /* минимальный зазор между текстом боя и полем описания */
-    }
-    .battle-text {
-      margin: 0; /* убираем отступы */
-      padding: 0;
-    }
-
-    /* Текстовые поля внутри редактора (введение, описание, заключение) */
+    /* Для текстовых полей внутри контейнера результата (редактор) */
     #result textarea {
-      padding: 6px;           /* увеличили, чтобы placeholder не обрезался */
-      line-height: 1.3;       /* чуть уменьшили, чтобы было компактнее */
-      margin-bottom: 0;       /* убираем лишний отступ снизу */
-    }
-    /* Для placeholder тоже задаём аналогичный line-height */
-    #result textarea::placeholder {
-      line-height: 1.3;
+      padding: 4px 6px 6px 6px; /* сверху 4px, снизу 6px */
+      line-height: 1.4;
     }
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-005</h2>
+  <h2>Парсер боёв v2-004</h2>
 
   <div id="faq">
     <details class="faq-item green">
@@ -461,6 +447,7 @@
         }
       }
       document.getElementById("resultTitle").textContent = mostCommonPlayer;
+      console.log("mostCommonPlayer", mostCommonPlayer);
       
       if (mostCommonPlayer) {
         let basePlayerName = "";
@@ -590,7 +577,7 @@
       let names = [];
       let playerRegex = /([A-Za-zА-Яа-яЁё0-9\s\-_']+(?:\s*\(\d+\))?)(?:\[(\d+)\])?/g;
       let match;
-      while ((match = playerRegex.exec(text)) !== null) {
+      while ((match = playerRegex.exec(cleanedText)) !== null) {
         let cleanedName = decodeHTMLEntities(match[1].trim());
         if (match[2]) {
           cleanedName += `[${match[2]}]`;
@@ -624,7 +611,6 @@
         battles.forEach((battle, index) => {
           let battleBlock = document.createElement("div");
           battleBlock.className = "battle-block";
-          
           let battleText = document.createElement("p");
           battleText.className = "battle-text";
           let urlRegex = /(https?:\/\/\S+)/;
@@ -633,7 +619,6 @@
           });
           battleText.innerHTML = modifiedBattle;
           battleBlock.appendChild(battleText);
-          
           let descField = document.createElement("textarea");
           descField.className = "battle-description";
           descField.placeholder = "Введите описание боя...";
@@ -643,7 +628,6 @@
             autoResize(descField);
           }
           battleBlock.appendChild(descField);
-          
           resultDiv.appendChild(battleBlock);
         });
         
