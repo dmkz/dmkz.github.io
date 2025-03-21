@@ -210,7 +210,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-009</h2>
+  <h2>Парсер боёв v2-010</h2>
 
   <div id="faq">
     <details class="faq-item green">
@@ -357,9 +357,9 @@
         });
         let conclusion = document.getElementById("conclusionField") ? document.getElementById("conclusionField").value.trim() : "";
         if (conclusion) parts.push(conclusion);
-        textToCopy = title + "\n\n" + parts.join("\n\n");
+        textToCopy = title + "\n" + parts.join("\n");
       } else {
-        textToCopy = title + "\n\n" + document.getElementById("result").textContent.trim();
+        textToCopy = title + "\n" + document.getElementById("result").textContent.trim();
       }
       
       if (!textToCopy) {
