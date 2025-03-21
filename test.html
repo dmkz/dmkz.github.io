@@ -233,7 +233,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-018</h2>
+  <h2>Парсер боёв v2-019</h2>
 
   <div id="faq">
     <details class="faq-item green">
@@ -378,13 +378,13 @@
           if (battleText) parts.push(battleText);
           if (battleDesc) parts.push(battleDesc);
         });
+        let conclusion = document.getElementById("conclusionField") ? document.getElementById("conclusionField").value.trim() : "";
+        if (conclusion) parts.push(conclusion);
         // Если опция включена, добавляем текст ссылки
         if (document.getElementById("includeAd").checked) {
           let currentURL = window.location.href;
           parts.push("Список боев сгенерирован здесь: " + currentURL);
         }
-        let conclusion = document.getElementById("conclusionField") ? document.getElementById("conclusionField").value.trim() : "";
-        if (conclusion) parts.push(conclusion);
         textToCopy = title + "\n" + parts.join("\n");
       } else {
         textToCopy = title + "\n" + document.getElementById("result").textContent.trim();
