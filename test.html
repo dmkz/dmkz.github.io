@@ -106,9 +106,9 @@
       padding: 4px;
       margin-bottom: 2px;
       border-radius: 5px;
-      display: flex;             /* добавляем */
-      flex-direction: column;    /* вертикально */
-      gap: 2px;                  /* небольшой зазор между элементами */
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
     .battle-text {
       margin: 0 0 2px 0;
@@ -202,7 +202,7 @@
     }
     /* Для текстовых полей внутри контейнера результата (редактор) */
     #result textarea {
-      padding: 4px 6px 6px 6px; /* сверху 4px, снизу 6px */
+      padding: 4px 6px 6px 6px;
     }
     #result textarea::placeholder {
       overflow: hidden;
@@ -210,7 +210,7 @@
   </style>
 </head>
 <body>
-  <h2>Парсер боёв v2-012</h2>
+  <h2>Парсер боёв v2-014</h2>
 
   <div id="faq">
     <details class="faq-item green">
@@ -380,7 +380,6 @@
       });
     }
 
-  
     function extractBattles(html, filters, doFilter, onlyWins, watchFromStart) {
       html = cleanSpecialSymbols(html);
       html = html.replace(/&nbsp;/g, ' ');
@@ -572,10 +571,9 @@
         });
       }
       
-      /*if (document.getElementById("includeAd").checked) {
-        let currentURL = window.location.href;
-        battles.push(`\nСписок боев сгенерирован здесь: ${currentURL}`);
-      }*/
+      if (document.getElementById("includeAd").checked) {
+        battles.push(`\nСписок боев сгенерирован здесь: ${window.location.href}`);
+      }
       return battles;
     }
   
@@ -604,6 +602,9 @@
     function renderBattles(battles) {
       let resultDiv = document.getElementById("result");
       if (editorModeEnabled) {
+        // Убираем из массива генератор, если он присутствует
+        battles = battles.filter(battle => !battle.includes("Список боев сгенерирован здесь:"));
+        
         resultDiv.innerHTML = "";
         
         // Отрисовка поля введения
@@ -643,7 +644,18 @@
           resultDiv.appendChild(battleBlock);
         });
         
-        // Если включена опция "Добавить ссылку на генератор", отрисовываем отдельный блок
+        // Отрисовка поля заключения
+        let conclusionField = document.createElement("textarea");
+        conclusionField.id = "conclusionField";
+        conclusionField.placeholder = "Введите заключение...";
+        attachAutoResize(conclusionField);
+        if (editorData.conclusion) {
+          conclusionField.value = editorData.conclusion;
+          autoResize(conclusionField);
+        }
+        resultDiv.appendChild(conclusionField);
+        
+        // Добавляем блок ссылки на генератор после поля заключения
         if (document.getElementById("includeAd").checked) {
           let adDiv = document.createElement("div");
           adDiv.className = "ad-link";
@@ -655,22 +667,10 @@
           adDiv.textContent = "Список боев сгенерирован здесь: " + currentURL;
           resultDiv.appendChild(adDiv);
         }
-        
-        // Отрисовка поля заключения
-        let conclusionField = document.createElement("textarea");
-        conclusionField.id = "conclusionField";
-        conclusionField.placeholder = "Введите заключение...";
-        attachAutoResize(conclusionField);
-        if (editorData.conclusion) {
-          conclusionField.value = editorData.conclusion;
-          autoResize(conclusionField);
-        }
-        resultDiv.appendChild(conclusionField);
       } else {
         resultDiv.innerHTML = "<pre>" + (battles.join("\n") || "Ничего не найдено") + "</pre>";
       }
     }
-
   
     function processBattles() {
       let html = document.getElementById("battleInput").value;
