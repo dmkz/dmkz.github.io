@@ -624,7 +624,7 @@
     function extractPlayerNames(text) {
       let cleanedText = text.replace(/<[^>]+>/g, '').trim();
       let names = [];
-      let playerRegex = /([A-Za-zА-Яа-яЁё0-9\s\-_']+(?:\s*\(\d+\))?)(?:\[(\d+)\])?/g;
+      let playerRegex = /([A-Za-zА-Яа-яЁё0-9\s\-_']+(?:\s*\(\d+(?:[^\d\)])?\))?)(?:\[(\d+)\])?/g;
       let match;
       while ((match = playerRegex.exec(cleanedText)) !== null) {
         let cleanedName = decodeHTMLEntities(match[1].trim());
