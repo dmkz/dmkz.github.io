@@ -162,7 +162,7 @@
     /********** Обновлённая генерация slug **********/
     function generateSlug(text) {
       return text.toLowerCase().trim()
-                 .replace(/[^\p{L}\p{N}\s-]/gu, "")  // разрешаем буквы (включая кириллицу), цифры, пробелы и дефисы
+                 .replace(/[^\p{L}\p{N}\s-]/gu, "")  // разрешаем буквы (в том числе кириллицу), цифры, пробелы и дефисы
                  .replace(/\s+/g, "-");
     }
 
@@ -182,9 +182,8 @@
       const dateSlug = generateSlug(dateStr);
       const slug = generateSlug(title);
       
-      // Формируем запись:
-      // Заголовок h3, затем ссылка "Наверх" ведущая к оглавлению этого дня, затем текст записи.
-      // Добавляем разделитель '---' перед записью для красоты.
+      // Формируем запись: Заголовок h3, ссылка "Наверх" и текст.
+      // Добавляем разделитель '---' перед записью.
       let entryMarkdown = `---\n### ${title}\n\n[Наверх](#${dateSlug})\n\n${content}\n\n`;
       
       // Оглавление для каждого дня помечаем как "## {dateStr}"
@@ -210,13 +209,23 @@
           newDocLines.push(lines[i]);
         }
         docText = newDocLines.join("\n");
-        // Добавляем запись в конец документа с разделителем
+        // Если последняя непустая строка – разделитель, то не добавляем ещё один.
+        let docLines = docText.trim().split("\n");
+        if (docLines[docLines.length - 1].trim() === "---") {
+          entryMarkdown = entryMarkdown.replace(/^---\n/, "");
+        }
+        // Добавляем запись в конец документа
         docText += "\n" + entryMarkdown;
       } else {
         // Если оглавления для этой даты нет, создаём новый блок в начале с разделителем.
         const newTOC = `${tocHeader}\n${tocLinkPrefix}${title}](#${slug})\n\n---\n\n`;
         docText = newTOC + docText;
-        // Добавляем запись в конец документа с разделителем
+        // Аналогично, если docText уже заканчивается на разделитель, убираем лишний.
+        let docLines = docText.trim().split("\n");
+        if (docLines[docLines.length - 1].trim() === "---") {
+          entryMarkdown = entryMarkdown.replace(/^---\n/, "");
+        }
+        // Добавляем запись в конец документа
         docText += "\n" + entryMarkdown;
       }
 
