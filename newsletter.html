@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Markdown Editor с оглавлением</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    /* Современный минималистичный стиль для 2025 года */
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    h1, h2, h3 {
+      color: #222;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: 600;
+    }
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 1rem;
+    }
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .buttons {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      background: #007acc;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #005fa3;
+    }
+    #preview {
+      margin-top: 20px;
+      border-top: 1px solid #ddd;
+      padding-top: 20px;
+    }
+    #domain-controls {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #domain-controls label {
+      margin: 0;
+      font-weight: normal;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Markdown Editor</h1>
+    
+    <!-- Панель для замены домена в ссылках -->
+    <div id="domain-controls">
+      <label for="domain-select">Выберите домен:</label>
+      <select id="domain-select">
+        <option value="www.heroeswm.ru">www.heroeswm.ru</option>
+        <option value="my.lordswm.com">my.lordswm.com</option>
+        <option value="lordswm.com">lordswm.com</option>
+        <option value="www.lordswm.com">www.lordswm.com</option>
+        <option value="mirror.heroeswm.ru">mirror.heroeswm.ru</option>
+      </select>
+      <button id="replace-domain">Заменить домены</button>
+    </div>
+    
+    <!-- Редактор исходного markdown -->
+    <label for="markdown-source">Исходный markdown:</label>
+    <textarea id="markdown-source" placeholder="Введите markdown здесь..."></textarea>
+    
+    <div class="buttons">
+      <button id="download-btn">Скачать исходник</button>
+      <button id="clear-btn">Очистить данные</button>
+      <button id="update-btn">Обновить предпросмотр</button>
+    </div>
+    
+    <!-- Интерфейс добавления новой записи -->
+    <div id="new-entry">
+      <h2>Добавить новую запись</h2>
+      <label for="entry-title">Заголовок (h3):</label>
+      <input type="text" id="entry-title" placeholder="Введите заголовок">
+      <label for="entry-content">Текст записи:</label>
+      <textarea id="entry-content" placeholder="Введите текст записи"></textarea>
+      <button id="add-entry-btn">Добавить запись</button>
+    </div>
+    
+    <!-- Предпросмотр отрендеренного markdown -->
+    <div id="preview">
+      <h2>Предпросмотр</h2>
+      <div id="markdown-preview"></div>
+    </div>
+  </div>
+  
+  <!-- Подключение библиотеки marked.js для рендеринга markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    /********** Инициализация и localStorage **********/
+    let docText = "";
+    const storageKey = "markdownDocument";
+
+    function loadMarkdown() {
+      const stored = localStorage.getItem(storageKey);
+      docText = stored ? stored : "";
+      document.getElementById("markdown-source").value = docText;
+      updatePreview();
+    }
+
+    function saveMarkdown() {
+      localStorage.setItem(storageKey, docText);
+    }
+
+    /********** Функция обновления предпросмотра **********/
+    function updatePreview() {
+      docText = document.getElementById("markdown-source").value;
+      // Добавляем два пробела в конце каждой непустой строки (если их ещё нет)
+      let lines = docText.split("\n").map(line => {
+        if(line.trim() !== "" && !line.endsWith("  ")) {
+          return line + "  ";
+        }
+        return line;
+      });
+      let processedText = lines.join("\n");
+      document.getElementById("markdown-source").value = processedText;
+      docText = processedText;
+      saveMarkdown();
+      document.getElementById("markdown-preview").innerHTML = marked.parse(docText);
+    }
+
+    /********** Генерация slug для заголовков **********/
+    function generateSlug(text) {
+      return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
+    }
+
+    /********** Добавление новой записи **********/
+    function addEntry() {
+      const titleInput = document.getElementById("entry-title");
+      const contentInput = document.getElementById("entry-content");
+      const title = titleInput.value.trim();
+      let content = contentInput.value.trim();
+      if (!title) {
+        alert("Введите заголовок!");
+        return;
+      }
+      // Получаем текущую дату в формате "D MMMM" (например, "31 марта")
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+      const dateSlug = generateSlug(dateStr);
+      const slug = generateSlug(title);
+      
+      // Формируем запись:
+      // Заголовок h3, затем ссылка "Наверх" ведущая к оглавлению этого дня, затем текст записи
+      let entryMarkdown = `### ${title}\n\n[Наверх](#${dateSlug})\n\n${content}\n\n`;
+      
+      // Оглавление для каждого дня помечаем как "## {dateStr}"
+      const tocHeader = `## ${dateStr}`;
+      const tocLinkPrefix = "- [";
+
+      // Если оглавление для текущей даты уже существует – добавляем ссылку в него.
+      if (docText.includes(tocHeader)) {
+        const lines = docText.split("\n");
+        let newDocLines = [];
+        let inToc = false;
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].trim() === tocHeader) {
+            inToc = true;
+            newDocLines.push(lines[i]);
+            // Сразу добавляем новую ссылку
+            newDocLines.push(`${tocLinkPrefix}${title}](#${slug})`);
+            continue;
+          }
+          if (inToc && lines[i].startsWith("## ")) {
+            inToc = false;
+          }
+          newDocLines.push(lines[i]);
+        }
+        docText = newDocLines.join("\n");
+        // Добавляем запись в конец документа
+        docText += "\n" + entryMarkdown;
+      } else {
+        // Если оглавления для этой даты нет, создаём новый блок в начале.
+        const newTOC = `${tocHeader}\n${tocLinkPrefix}${title}](#${slug})\n\n`;
+        docText = newTOC + docText;
+        // Добавляем запись в конец документа
+        docText += "\n" + entryMarkdown;
+      }
+
+      // Пересортировка оглавлений по датам (от самых свежих к старым)
+      let lines = docText.split("\n");
+      let tocSections = {};
+      let contentLines = [];
+      let currentToc = null;
+      // Разбиваем документ: ищем строки, начинающиеся с "## " (оглавления) и следующие за ними строки с пунктами
+      for (let line of lines) {
+        if (line.startsWith("## ")) {
+          currentToc = line;
+          tocSections[currentToc] = [];
+        } else if (currentToc && line.startsWith("- [")) {
+          tocSections[currentToc].push(line);
+        } else {
+          contentLines.push(line);
+        }
+      }
+      // Сортируем ключи оглавлений по дате (учитывая переход через год)
+      let tocKeys = Object.keys(tocSections);
+      tocKeys.sort((a, b) => {
+        const dateA = a.substring(3).trim();
+        const dateB = b.substring(3).trim();
+        function parseDate(dateStr) {
+          const parts = dateStr.split(" ");
+          let day = parseInt(parts[0]);
+          let monthName = parts[1];
+          const months = {
+            "января": 0, "февраля": 1, "марта": 2, "апреля": 3,
+            "мая": 4, "июня": 5, "июля": 6, "августа": 7,
+            "сентября": 8, "октября": 9, "ноября": 10, "декабря": 11
+          };
+          let month = months[monthName];
+          let year = new Date().getFullYear();
+          // Если сейчас декабрь, а дата — январь, то считаем январь следующим годом
+          if (new Date().getMonth() === 11 && month === 0) {
+            year++;
+          }
+          return new Date(year, month, day);
+        }
+        return parseDate(dateB) - parseDate(dateA);
+      });
+      // Пересобираем блок оглавлений
+      let newTOCBlock = "";
+      for (let key of tocKeys) {
+        newTOCBlock += key + "\n";
+        tocSections[key].forEach(bullet => newTOCBlock += bullet + "\n");
+        newTOCBlock += "\n";
+      }
+      // Объединяем новый блок оглавлений с остальным содержимым
+      docText = newTOCBlock + "\n" + contentLines.join("\n");
+      
+      document.getElementById("markdown-source").value = docText;
+      updatePreview();
+      // Очищаем поля ввода новой записи
+      titleInput.value = "";
+      contentInput.value = "";
+    }
+
+    /********** Скачивание исходника **********/
+    function downloadSource() {
+      const blob = new Blob([docText], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "document.md";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    /********** Очистка localStorage **********/
+    function clearData() {
+      if (confirm("Вы уверены, что хотите очистить данные?")) {
+        localStorage.removeItem(storageKey);
+        docText = "";
+        document.getElementById("markdown-source").value = "";
+        updatePreview();
+      }
+    }
+
+    /********** Замена домена в ссылках **********/
+    function replaceDomains() {
+      const selectedDomain = document.getElementById("domain-select").value;
+      // Заранее заданный список доменов
+      const domains = ["www.heroeswm.ru", "my.lordswm.com", "lordswm.com", "www.lordswm.com", "mirror.heroeswm.ru"];
+      const regex = new RegExp("(" + domains.join("|").replace(/\./g, "\\.") + ")", "gi");
+      docText = docText.replace(regex, selectedDomain);
+      document.getElementById("markdown-source").value = docText;
+      updatePreview();
+    }
+
+    /********** Обработчики событий **********/
+    document.getElementById("add-entry-btn").addEventListener("click", addEntry);
+    document.getElementById("download-btn").addEventListener("click", downloadSource);
+    document.getElementById("clear-btn").addEventListener("click", clearData);
+    document.getElementById("update-btn").addEventListener("click", updatePreview);
+    document.getElementById("replace-domain").addEventListener("click", replaceDomains);
+    document.getElementById("markdown-source").addEventListener("input", () => {
+      docText = document.getElementById("markdown-source").value;
+      saveMarkdown();
+      updatePreview();
+    });
+
+    window.onload = loadMarkdown;
+  </script>
+</body>
+</html>
