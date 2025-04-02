@@ -159,9 +159,11 @@
       document.getElementById("markdown-preview").innerHTML = marked.parse(docText);
     }
 
-    /********** Генерация slug для заголовков **********/
+    /********** Обновлённая генерация slug **********/
     function generateSlug(text) {
-      return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
+      return text.toLowerCase().trim()
+                 .replace(/[^\p{L}\p{N}\s-]/gu, "")  // разрешаем буквы (включая кириллицу), цифры, пробелы и дефисы
+                 .replace(/\s+/g, "-");
     }
 
     /********** Добавление новой записи **********/
@@ -181,13 +183,14 @@
       const slug = generateSlug(title);
       
       // Формируем запись:
-      // Заголовок h3, затем ссылка "Наверх" ведущая к оглавлению этого дня, затем текст записи
-      let entryMarkdown = `### ${title}\n\n[Наверх](#${dateSlug})\n\n${content}\n\n`;
+      // Заголовок h3, затем ссылка "Наверх" ведущая к оглавлению этого дня, затем текст записи.
+      // Добавляем разделитель '---' перед записью для красоты.
+      let entryMarkdown = `---\n### ${title}\n\n[Наверх](#${dateSlug})\n\n${content}\n\n`;
       
       // Оглавление для каждого дня помечаем как "## {dateStr}"
       const tocHeader = `## ${dateStr}`;
       const tocLinkPrefix = "- [";
-
+      
       // Если оглавление для текущей даты уже существует – добавляем ссылку в него.
       if (docText.includes(tocHeader)) {
         const lines = docText.split("\n");
@@ -197,7 +200,7 @@
           if (lines[i].trim() === tocHeader) {
             inToc = true;
             newDocLines.push(lines[i]);
-            // Сразу добавляем новую ссылку
+            // Добавляем новую ссылку для записи
             newDocLines.push(`${tocLinkPrefix}${title}](#${slug})`);
             continue;
           }
@@ -207,13 +210,13 @@
           newDocLines.push(lines[i]);
         }
         docText = newDocLines.join("\n");
-        // Добавляем запись в конец документа
+        // Добавляем запись в конец документа с разделителем
         docText += "\n" + entryMarkdown;
       } else {
-        // Если оглавления для этой даты нет, создаём новый блок в начале.
-        const newTOC = `${tocHeader}\n${tocLinkPrefix}${title}](#${slug})\n\n`;
+        // Если оглавления для этой даты нет, создаём новый блок в начале с разделителем.
+        const newTOC = `${tocHeader}\n${tocLinkPrefix}${title}](#${slug})\n\n---\n\n`;
         docText = newTOC + docText;
-        // Добавляем запись в конец документа
+        // Добавляем запись в конец документа с разделителем
         docText += "\n" + entryMarkdown;
       }
 
