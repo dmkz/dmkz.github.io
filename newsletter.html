@@ -103,6 +103,7 @@
     
     <div class="buttons">
       <button id="download-btn">Скачать исходник</button>
+      <button id="copy-btn">Скопировать исходник</button>
       <button id="clear-btn">Очистить данные</button>
       <button id="update-btn">Обновить предпросмотр</button>
     </div>
@@ -299,6 +300,13 @@
       URL.revokeObjectURL(url);
     }
 
+    /********** Копирование исходника в буфер обмена **********/
+    function copySource() {
+      navigator.clipboard.writeText(docText)
+        .then(() => { alert("Исходник скопирован в буфер обмена!"); })
+        .catch(err => { alert("Ошибка копирования: " + err); });
+    }
+
     /********** Очистка localStorage **********/
     function clearData() {
       if (confirm("Вы уверены, что хотите очистить данные?")) {
@@ -323,6 +331,7 @@
     /********** Обработчики событий **********/
     document.getElementById("add-entry-btn").addEventListener("click", addEntry);
     document.getElementById("download-btn").addEventListener("click", downloadSource);
+    document.getElementById("copy-btn").addEventListener("click", copySource);
     document.getElementById("clear-btn").addEventListener("click", clearData);
     document.getElementById("update-btn").addEventListener("click", updatePreview);
     document.getElementById("replace-domain").addEventListener("click", replaceDomains);
