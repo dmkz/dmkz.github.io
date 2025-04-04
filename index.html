@@ -436,6 +436,7 @@
       let removeMostCommon = document.getElementById("removeMostCommon").checked;
       
       for (let match of battleMatches) {
+        console.log("match", match);
         let warId = match[1];
         let secretCode = match[2] || "";
         let [day, month, year, time] = match[3].split(/[- ]/);
