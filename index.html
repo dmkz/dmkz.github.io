@@ -440,6 +440,15 @@
         let warId = match[1];
         let secretCode = match[2] || "";
         let [day, month, year, time] = match[3].split(/[- ]/);
+        if (day.length === 4) {
+          // Если day содержит 4 символа, значит это год в формате "YYYY"
+          // Сохраним оригинальное значение в temp
+          let temp = day;
+          // Заменяем day на значение, которое было в year (то есть день)
+          day = year;
+          // Оставляем в year только последние 2 символа исходного года
+          year = temp.slice(-2);
+        }
         let formattedDateTime = `${year}-${month}-${day} ${time}`;
         
         if (document.getElementById("filterByDate").checked) {
