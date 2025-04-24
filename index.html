@@ -440,6 +440,7 @@
       for (let match of battleMatches) {
         console.log("match", match);
         let warId = match[1];
+        console.log("warId: " + warId);
         let secretCode = match[2] || "";
         let [day, month, year, time] = match[3].split(/[- ]/);
         if (day.length === 4) {
@@ -452,7 +453,7 @@
           year = temp.slice(-2);
         }
         let formattedDateTime = `${year}-${month}-${day} ${time}`;
-        
+        console.log("formattedDateTime: " + formattedDateTime);
         if (document.getElementById("filterByDate").checked) {
           let userDateStr = document.getElementById("dateFilterInput").value.trim();
           if (userDateStr !== "") {
@@ -477,9 +478,12 @@
   
         let participantsRaw = match[4].trim();
         let sides = participantsRaw.split(/\s+vs\s+/g);
+        console.log("sides: " + sides);
         let sidesParsed = sides.map(side => extractPlayerNames(side));
         for (let side of sidesParsed) {
+          console.log("side: " + side);
           for (let playerName of side) {
+            console.log("playerName: " + playerName);
             if (!playerCounts[playerName]) {
               playerCounts[playerName] = 0;
             }
@@ -635,6 +639,7 @@
   
     function extractPlayerNames(text) {
       let cleanedText = text.replace(/<[^>]+>/g, '').trim();
+      console.log("cleanedText: " + cleanedText);
       let names = [];                            // (?:\s*\(\d+(?:[^\d\)])?\))?
       let playerRegex = /([A-Za-zА-Яа-яЁё0-9\s\-_']+(?:\s*\([^)]+\))?)(?:\[(\d+)\])?/g;
       let match;
@@ -643,6 +648,7 @@
         if (match[2]) {
           cleanedName += `[${match[2]}]`;
         }
+        console.log("cleanedName: " + cleanedName);
         names.push(cleanedName);
       }
       return names.length > 0 ? names : ["Неизвестный"];
