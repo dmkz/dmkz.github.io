@@ -160,11 +160,16 @@
       document.getElementById("markdown-preview").innerHTML = marked.parse(docText);
     }
 
-    /********** Обновлённая генерация slug **********/
     function generateSlug(text) {
-      return text.toLowerCase().trim()
-                 .replace(/\s+/g, "-")
-                 .replace(/[^\p{L}\p{N}\s-]/gu, "");  // разрешаем буквы (в том числе кириллицу), цифры, пробелы и дефисы
+      return text
+        .toLowerCase()
+        .trim()
+        // 1) все пробелы (и группы пробельных) → один дефис
+        .replace(/\s+/g, "-")
+        // 2) удаляем всё, что не буква, не цифра, не дефис и не подчёркивание
+        .replace(/[^\p{L}\p{N}_-]+/gu, "");
+    }
+
                  
     }
 
