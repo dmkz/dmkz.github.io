@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Калькулятор стоимости армии</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+      line-height: 1.5;
+    }
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      font-family: monospace;
+      font-size: 14px;
+      margin-top: 5px;
+      margin-bottom: 20px;
+      padding: 10px;
+      resize: vertical;
+    }
+    textarea[readonly] {
+      background: #f9f9f9;
+    }
+    label {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Калькулятор стоимости армии</h1>
+
+  <label for="prices-input">HTML с ценами на существ:</label>
+  <textarea id="prices-input" rows="10" placeholder="Вставьте сюда HTML-код с блоками цен…"></textarea>
+
+  <label for="army-input">Описание армии:</label>
+  <textarea id="army-input" rows="3" placeholder="[Шпионки (147), Кочевники (67), …]"></textarea>
+
+  <label for="total-output">Суммарная стоимость:</label>
+  <textarea id="total-output" rows="1" readonly></textarea>
+
+  <script>
+    // Парсим HTML-код и собираем словарь {название: цена}
+    function parsePrices(html) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const prices = {};
+      // каждый блок существа
+      doc.querySelectorAll('.hwm_event_set_stack_block').forEach(block => {
+        // ищем div с текстом и ценой
+        const info = block.querySelector('div[style*="text-align: left"]');
+        if (!info) return;
+        // имя существа в первом вложенном <div>
+        const nameDiv = info.querySelector('div');
+        if (!nameDiv) return;
+        const name = nameDiv.textContent.trim();
+        // цена находится в <span> с картинкой серебра
+        const priceB = info.querySelector('span[style*="adv_ev_silver48.png"] b');
+        if (!priceB) return;
+        const price = parseInt(priceB.textContent.replace(/\D/g,''), 10);
+        if (!isNaN(price)) {
+          prices[name] = price;
+        }
+      });
+      return prices;
+    }
+
+    // Парсим строку армия вида "[Имя (кол-во), …]"
+    function parseArmy(text) {
+      const army = {};
+      text = text.trim();
+      if (text.startsWith('[') && text.endsWith(']')) {
+        text = text.slice(1, -1);
+      }
+      text.split(',').forEach(part => {
+        const m = part.match(/(.+?)\s*\((\d+)\)/);
+        if (m) {
+          const name = m[1].trim();
+          const cnt = parseInt(m[2], 10);
+          if (!isNaN(cnt)) {
+            army[name] = cnt;
+          }
+        }
+      });
+      return army;
+    }
+
+    // Пересчитываем стоимость и выводим в поле
+    function updateTotal() {
+      const html = document.getElementById('prices-input').value;
+      const armyText = document.getElementById('army-input').value;
+      const out = document.getElementById('total-output');
+
+      let total = 0;
+      try {
+        const prices = parsePrices(html);
+        const army = parseArmy(armyText);
+        for (const [name, cnt] of Object.entries(army)) {
+          const p = prices[name];
+          if (p != null) {
+            total += p * cnt;
+          }
+        }
+        out.value = total + ' серебра';
+      } catch (e) {
+        out.value = 'Ошибка разбора данных';
+        console.error(e);
+      }
+    }
+
+    // Слушаем изменения сразу в обоих полях
+    document.getElementById('prices-input').addEventListener('input', updateTotal);
+    document.getElementById('army-input').addEventListener('input', updateTotal);
+
+    // Начальный расчёт (если поля уже заполнены при загрузке)
+    updateTotal();
+  </script>
+</body>
+</html>
