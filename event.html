@@ -449,15 +449,23 @@
       }
       
       // Настраиваем marked для создания правильных ID для заголовков
-      const renderer = new marked.Renderer();
-      const originalHeading = renderer.heading;
-      
-      renderer.heading = function(text, level, raw) {
-        const slug = generateSlug(raw);
-        return `<h${level} id="${slug}">${text}</h${level}>\n`;
+      const renderer = {
+        heading({ tokens, depth }) {
+          // Парсим токены в текст
+          const text = this.parser.parseInline(tokens);
+          // Генерируем slug из текста
+          const slug = generateSlug(text);
+          return `<h${depth} id="${slug}">${text}</h${depth}>\n`;
+        }
       };
       
-      marked.setOptions({ renderer: renderer });
+      marked.use({ 
+        renderer: renderer,
+        gfm: true,
+        breaks: true,
+        headerIds: true,
+        mangle: false
+      });
       
       document.getElementById("markdown-preview").innerHTML = marked.parse(docText);
     }
