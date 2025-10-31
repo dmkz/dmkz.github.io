@@ -549,7 +549,15 @@
             'apikey': SUPABASE_ANON_KEY,
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
           },
-          body: JSON.stringify({...})
+          body: JSON.stringify({
+              password: password,
+              entry: {
+                slug: '_password_check',
+                title: 'Test',
+                content: 'test',
+                date_section: 'test'
+              }
+            })
         })
         
         if (testRes.status === 401) {
