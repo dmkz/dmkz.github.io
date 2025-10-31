@@ -440,10 +440,14 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
     /********** Конфигурация **********/
-    const CORRECT_PASSWORD = "AnyKeyRoadToTop3";
+    const SUPABASE_URL = 'https://udzibrtuajopcsnujzas.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkemlicnR1YWpvcGNzbnVqemFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0Nzk1MjMsImV4cCI6MjA2MDA1NTUyM30.pE_wA9epoX0YLkAmeH0A8AYX-HZgmfr2d25CNrF3IiI'
+    const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/document-api`
+
     const storageKey = "markdownDocument";
     let docText = "";
     let isUnlocked = false;
+
     
     const themeStorageKey = "themePreference";
     let currentTheme = "light"; // По умолчанию светлая тема
@@ -482,6 +486,17 @@
       // Если темы нет в localStorage, используем светлую по умолчанию
       setTheme(savedTheme || "light");
     }
+    
+    
+    /********** Хеширование SHA-256 **********/
+    async function hashSHA256(text) {
+      const encoder = new TextEncoder()
+      const data = encoder.encode(text)
+      const hash = await crypto.subtle.digest('SHA-256', data)
+      return Array.from(new Uint8Array(hash))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
+    }
 
     
     /********** Настройка marked для GitHub-стиля **********/
@@ -515,23 +530,60 @@
       }
     }
     
-    /********** Проверка пароля **********/
-    function checkPassword() {
-      const passwordInput = document.getElementById("password-input");
-      const enteredPassword = passwordInput.value;
+    /********** Проверка пароля (через сервер) **********/
+    async function checkPassword() {
+      const passwordInput = document.getElementById("password-input")
+      const password = passwordInput.value
       
-      if (enteredPassword === CORRECT_PASSWORD) {
-        isUnlocked = true;
-        document.getElementById("passwordSection").style.display = "none";
-        document.getElementById("editingSection").style.display = "block";
-        showNotification("✅ Доступ разрешен! Редактирование разблокировано.");
-        updateViewMode();
-        passwordInput.value = "";
-      } else {
-        showNotification("❌ Неверный пароль!", true);
-        passwordInput.value = "";
+      if (!password) {
+        showNotification("❌ Введите пароль!", true)
+        return
+      }
+      
+      try {
+        // Пробуем сохранить тестовую запись для проверки пароля
+        const testRes = await fetch(`${EDGE_FUNCTION_URL}/save`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({
+            password: password,
+            entry: {
+              slug: '_password_check',
+              title: 'Test',
+              content: 'test',
+              date_section: 'test'
+            }
+          })
+        })
+        
+        if (testRes.status === 401) {
+          showNotification("❌ Неверный пароль!", true)
+          passwordInput.value = ""
+          return
+        }
+        
+        if (!testRes.ok) {
+          throw new Error('Ошибка сервера')
+        }
+        
+        // Пароль верный
+        sessionStorage.setItem('editor_password', password)
+        isUnlocked = true
+        document.getElementById("passwordSection").style.display = "none"
+        document.getElementById("editingSection").style.display = "block"
+        showNotification("✅ Доступ разрешён!")
+        updateViewMode()
+        passwordInput.value = ""
+        
+      } catch (error) {
+        showNotification(`❌ Ошибка: ${error.message}`, true)
+        passwordInput.value = ""
       }
     }
+
     
     /********** Управление панелью редактирования **********/
     function toggleEditorPanel() {
@@ -597,120 +649,229 @@
       document.getElementById("markdown-preview").innerHTML = marked.parse(docText);
     }
     
-    /********** Добавление новой записи **********/
-    function addEntry() {
-      if (!isUnlocked) {
-        showNotification("❌ Требуется пароль для редактирования!", true);
-        return;
-      }
-      
-      const titleInput = document.getElementById("entry-title");
-      const contentInput = document.getElementById("entry-content");
-      const title = titleInput.value.trim();
-      let content = contentInput.value.trim();
-      
-      if (!title) {
-        showNotification("❌ Введите заголовок!", true);
-        return;
-      }
-      
-      const now = new Date();
-      const dateStr = now.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
-      const dateSlug = generateSlug(dateStr);
-      const slug = generateSlug(title);
-      
-      let entryMarkdown = `---\n### ${title}\n\n[Наверх](#${dateSlug})\n\n${content}\n\n`;
-      
-      const tocHeader = `## ${dateStr}`;
-      const tocLinkPrefix = "- [";
-      
-      if (docText.includes(tocHeader)) {
-        const lines = docText.split("\n");
-        let newDocLines = [];
-        let inToc = false;
-        for (let i = 0; i < lines.length; i++) {
-          if (lines[i].trim() === tocHeader) {
-            inToc = true;
-            newDocLines.push(lines[i]);
-            newDocLines.push(`${tocLinkPrefix}${title}](#${slug})`);
-            continue;
+    
+    /********** Синхронизация с БД **********/
+    async function syncWithDatabase() {
+      try {
+        showNotification("🔄 Синхронизация...")
+        
+        // Получаем хеши из БД
+        const hashesRes = await fetch(`${EDGE_FUNCTION_URL}/hashes`, {
+          headers: { 'apikey': SUPABASE_ANON_KEY }
+        })
+        
+        if (!hashesRes.ok) {
+          throw new Error('Не удалось получить данные')
+        }
+        
+        const dbHashes = await hashesRes.json()
+        
+        // Получаем локальные хеши
+        const localHashes = JSON.parse(localStorage.getItem('entry_hashes') || '{}')
+        
+        // Находим изменённые записи
+        const slugsToFetch = []
+        for (const { slug, content_hash } of dbHashes) {
+          if (localHashes[slug] !== content_hash) {
+            slugsToFetch.push(slug)
           }
-          if (inToc && lines[i].startsWith("## ")) {
-            inToc = false;
+        }
+        
+        if (slugsToFetch.length === 0) {
+          showNotification("✅ Данные актуальны")
+          rebuildDocument()
+          return
+        }
+        
+        // Загружаем батчами по 50
+        const batchSize = 50
+        const batches = []
+        for (let i = 0; i < slugsToFetch.length; i += batchSize) {
+          batches.push(slugsToFetch.slice(i, i + batchSize))
+        }
+        
+        const fetchPromises = batches.map(batch =>
+          fetch(`${EDGE_FUNCTION_URL}/batch`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': SUPABASE_ANON_KEY
+            },
+            body: JSON.stringify({ slugs: batch })
+          }).then(r => r.json())
+        )
+        
+        const results = await Promise.all(fetchPromises)
+        const entries = results.flat()
+        
+        // Обновляем localStorage
+        for (const entry of entries) {
+          localStorage.setItem(`entry_${entry.slug}`, JSON.stringify(entry))
+          localHashes[entry.slug] = entry.content_hash
+        }
+        localStorage.setItem('entry_hashes', JSON.stringify(localHashes))
+        
+        showNotification(`✅ Загружено ${entries.length} записей`)
+        rebuildDocument()
+        
+      } catch (error) {
+        console.error('Sync error:', error)
+        showNotification(`❌ Ошибка синхронизации: ${error.message}`, true)
+        // Fallback к локальным данным
+        loadMarkdown()
+      }
+    }
+
+    /********** Сохранение в БД **********/
+    async function saveEntryToDatabase(entry) {
+      const password = sessionStorage.getItem('editor_password')
+      if (!password) {
+        showNotification("❌ Требуется авторизация!", true)
+        return false
+      }
+      
+      try {
+        const res = await fetch(`${EDGE_FUNCTION_URL}/save`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ password, entry })
+        })
+        
+        if (!res.ok) {
+          const errorData = await res.json()
+          throw new Error(errorData.error || 'Ошибка сохранения')
+        }
+        
+        const saved = await res.json()
+        
+        // Обновляем локальный кеш
+        localStorage.setItem(`entry_${saved.slug}`, JSON.stringify(saved))
+        const hashes = JSON.parse(localStorage.getItem('entry_hashes') || '{}')
+        hashes[saved.slug] = saved.content_hash
+        localStorage.setItem('entry_hashes', JSON.stringify(hashes))
+        
+        return true
+      } catch (error) {
+        console.error('Save error:', error)
+        showNotification(`❌ ${error.message}`, true)
+        return false
+      }
+    }
+
+    /********** Пересборка документа **********/
+    function rebuildDocument() {
+      const entries = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith('entry_')) {
+          try {
+            const entry = JSON.parse(localStorage.getItem(key))
+            if (entry.slug !== '_password_check') {
+              entries.push(entry)
+            }
+          } catch (e) {
+            console.error('Parse error:', e)
           }
-          newDocLines.push(lines[i]);
-        }
-        docText = newDocLines.join("\n");
-        let docLines = docText.trim().split("\n");
-        if (docLines[docLines.length - 1].trim() === "---") {
-          entryMarkdown = entryMarkdown.replace(/^---\n/, "");
-        }
-        docText += "\n" + entryMarkdown;
-      } else {
-        const newTOC = `${tocHeader}\n${tocLinkPrefix}${title}](#${slug})\n\n---\n\n`;
-        docText = newTOC + docText;
-        let docLines = docText.trim().split("\n");
-        if (docLines[docLines.length - 1].trim() === "---") {
-          entryMarkdown = entryMarkdown.replace(/^---\n/, "");
-        }
-        docText += "\n" + entryMarkdown;
-      }
-      
-      // Пересортировка оглавлений по датам
-      let lines = docText.split("\n");
-      let tocSections = {};
-      let contentLines = [];
-      let currentToc = null;
-      
-      for (let line of lines) {
-        if (line.startsWith("## ")) {
-          currentToc = line;
-          tocSections[currentToc] = [];
-        } else if (currentToc && line.startsWith("- [")) {
-          tocSections[currentToc].push(line);
-        } else {
-          contentLines.push(line);
         }
       }
       
-      let tocKeys = Object.keys(tocSections);
-      tocKeys.sort((a, b) => {
-        const dateA = a.substring(3).trim();
-        const dateB = b.substring(3).trim();
-        function parseDate(dateStr) {
-          const parts = dateStr.split(" ");
-          let day = parseInt(parts[0]);
-          let monthName = parts[1];
+      // Сортируем по дате обновления
+      entries.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+      
+      // Группируем по датам
+      const dateGroups = {}
+      for (const entry of entries) {
+        if (!dateGroups[entry.date_section]) {
+          dateGroups[entry.date_section] = []
+        }
+        dateGroups[entry.date_section].push(entry)
+      }
+      
+      // Строим markdown
+      let markdown = ''
+      const sortedDates = Object.keys(dateGroups).sort((a, b) => {
+        // Сортировка дат
+        const parseDate = (dateStr) => {
+          const parts = dateStr.split(" ")
+          const day = parseInt(parts[0])
           const months = {
             "января": 0, "февраля": 1, "марта": 2, "апреля": 3,
             "мая": 4, "июня": 5, "июля": 6, "августа": 7,
             "сентября": 8, "октября": 9, "ноября": 10, "декабря": 11
-          };
-          let month = months[monthName];
-          let year = new Date().getFullYear();
-          if (new Date().getMonth() === 11 && month === 0) {
-            year++;
           }
-          return new Date(year, month, day);
+          const month = months[parts[1]]
+          return new Date(new Date().getFullYear(), month, day)
         }
-        return parseDate(dateB) - parseDate(dateA);
-      });
+        return parseDate(b) - parseDate(a)
+      })
       
-      let newTOCBlock = "";
-      for (let key of tocKeys) {
-        newTOCBlock += key + "\n";
-        tocSections[key].forEach(bullet => newTOCBlock += bullet + "\n");
-        newTOCBlock += "\n";
+      for (const dateSection of sortedDates) {
+        markdown += `## ${dateSection}\n`
+        
+        // Добавляем ссылки в оглавление
+        for (const entry of dateGroups[dateSection]) {
+          markdown += `- [${entry.title}](#${entry.slug})\n`
+        }
+        markdown += `\n---\n\n`
+        
+        // Добавляем содержимое записей
+        for (const entry of dateGroups[dateSection]) {
+          markdown += `### ${entry.title}\n\n`
+          markdown += `[Наверх](#${generateSlug(dateSection)})\n\n`
+          markdown += `${entry.content}\n\n`
+        }
       }
       
-      docText = newTOCBlock + "\n" + contentLines.join("\n");
-      
-      document.getElementById("markdown-source").value = docText;
-      updatePreview();
-      titleInput.value = "";
-      contentInput.value = "";
-      showNotification("✅ Запись добавлена!");
+      docText = markdown
+      document.getElementById("markdown-source").value = docText
+      saveMarkdown()
+      updatePreview()
     }
+
+    
+    /********** Добавление новой записи **********/
+    async function addEntry() {
+      if (!isUnlocked) {
+        showNotification("❌ Требуется пароль!", true)
+        return
+      }
+      
+      const titleInput = document.getElementById("entry-title")
+      const contentInput = document.getElementById("entry-content")
+      const title = titleInput.value.trim()
+      const content = contentInput.value.trim()
+      
+      if (!title) {
+        showNotification("❌ Введите заголовок!", true)
+        return
+      }
+      
+      const now = new Date()
+      const dateStr = now.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })
+      const slug = generateSlug(title)
+      
+      const entry = {
+        slug: slug,
+        title: title,
+        content: content,
+        date_section: dateStr
+      }
+      
+      // Сохраняем в БД
+      showNotification("💾 Сохранение...")
+      const saved = await saveEntryToDatabase(entry)
+      
+      if (saved) {
+        showNotification("✅ Запись сохранена!")
+        titleInput.value = ""
+        contentInput.value = ""
+        await syncWithDatabase() // rebuildDocument() пересоздаст правильный markdown
+      }
+    }
+
     
     /********** Скачивание исходника **********/
     function downloadSource() {
@@ -789,12 +950,12 @@
     
     /********** Инициализация при загрузке **********/
     window.onload = function() {
-      loadTheme(); // Загружаем сохраненную тему
-      loadMarkdown();
-      updateViewMode();
-      // Панель редактирования свернута по умолчанию
-      document.querySelector(".toggle-icon").classList.add("collapsed");
-    };
+      loadTheme()
+      syncWithDatabase() // Синхронизируемся с БД вместо loadMarkdown()
+      updateViewMode()
+      document.querySelector(".toggle-icon").classList.add("collapsed")
+    }
+
   </script>
 </body>
 </html>
