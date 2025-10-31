@@ -546,17 +546,10 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
           },
-          body: JSON.stringify({
-            password: password,
-            entry: {
-              slug: '_password_check',
-              title: 'Test',
-              content: 'test',
-              date_section: 'test'
-            }
-          })
+          body: JSON.stringify({...})
         })
         
         if (testRes.status === 401) {
@@ -657,8 +650,12 @@
         
         // Получаем хеши из БД
         const hashesRes = await fetch(`${EDGE_FUNCTION_URL}/hashes`, {
-          headers: { 'apikey': SUPABASE_ANON_KEY }
+          headers: { 
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          }
         })
+
         
         if (!hashesRes.ok) {
           throw new Error('Не удалось получить данные')
@@ -695,11 +692,13 @@
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'apikey': SUPABASE_ANON_KEY
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
             },
             body: JSON.stringify({ slugs: batch })
           }).then(r => r.json())
         )
+
         
         const results = await Promise.all(fetchPromises)
         const entries = results.flat()
@@ -735,7 +734,8 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
           },
           body: JSON.stringify({ password, entry })
         })
