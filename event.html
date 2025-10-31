@@ -772,30 +772,46 @@
     /********** Пересборка документа **********/
     function rebuildDocument() {
       const entries = []
+      
+      // Собираем все записи из localStorage
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i)
         if (key && key.startsWith('entry_')) {
           try {
             const entry = JSON.parse(localStorage.getItem(key))
-            if (entry.slug !== '_password_check') {
-              entries.push(entry)
-            }
+            
+            // ФИЛЬТРУЕМ: пропускаем тестовые записи и записи с undefined
+            if (entry.slug === '_password_check') continue
+            if (!entry.title || !entry.content || !entry.date_section) continue
+            if (entry.title === 'Test' || entry.title === 'test') continue
+            
+            entries.push(entry)
           } catch (e) {
             console.error('Parse error:', e)
           }
         }
       }
       
+      // Если нет записей, очищаем документ
+      if (entries.length === 0) {
+        docText = ""
+        document.getElementById("markdown-source").value = docText
+        saveMarkdown()
+        updatePreview()
+        return
+      }
+      
       // Сортируем по дате обновления
-      entries.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+      entries.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0))
       
       // Группируем по датам
       const dateGroups = {}
       for (const entry of entries) {
-        if (!dateGroups[entry.date_section]) {
-          dateGroups[entry.date_section] = []
+        const dateSection = entry.date_section || 'Без даты'
+        if (!dateGroups[dateSection]) {
+          dateGroups[dateSection] = []
         }
-        dateGroups[entry.date_section].push(entry)
+        dateGroups[dateSection].push(entry)
       }
       
       // Строим markdown
@@ -803,15 +819,21 @@
       const sortedDates = Object.keys(dateGroups).sort((a, b) => {
         // Сортировка дат
         const parseDate = (dateStr) => {
+          if (dateStr === 'Без даты') return new Date(0)
           const parts = dateStr.split(" ")
-          const day = parseInt(parts[0])
+          const day = parseInt(parts[0]) || 1
           const months = {
             "января": 0, "февраля": 1, "марта": 2, "апреля": 3,
             "мая": 4, "июня": 5, "июля": 6, "августа": 7,
             "сентября": 8, "октября": 9, "ноября": 10, "декабря": 11
           }
-          const month = months[parts[1]]
-          return new Date(new Date().getFullYear(), month, day)
+          const month = months[parts[1]] || 0
+          const year = new Date().getFullYear()
+          // Учитываем переход через год
+          if (new Date().getMonth() === 11 && month === 0) {
+            return new Date(year + 1, month, day)
+          }
+          return new Date(year, month, day)
         }
         return parseDate(b) - parseDate(a)
       })
