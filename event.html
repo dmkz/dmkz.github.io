@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Markdown Editor с оглавлением</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <!-- GitHub Markdown CSS для красивого рендеринга -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown.min.css">
+  
+  <style>
+    /* Общие стили страницы */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+      background: #0d1117;
+      margin: 0;
+      padding: 0;
+      color: #c9d1d9;
+    }
+    
+    .container {
+      max-width: 1012px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    /* Стили для сворачиваемой панели редактирования */
+    .editor-panel {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    
+    .editor-header {
+      background: #21262d;
+      padding: 12px 16px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      border-bottom: 1px solid #30363d;
+    }
+    
+    .editor-header:hover {
+      background: #30363d;
+    }
+    
+    .editor-header h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #c9d1d9;
+    }
+    
+    .toggle-icon {
+      font-size: 12px;
+      transition: transform 0.3s;
+    }
+    
+    .toggle-icon.collapsed {
+      transform: rotate(-90deg);
+    }
+    
+    .editor-content {
+      padding: 16px;
+      display: none;
+    }
+    
+    .editor-content.expanded {
+      display: block;
+    }
+    
+    /* Стили для элементов управления */
+    label {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 5px;
+      font-weight: 600;
+      font-size: 14px;
+      color: #c9d1d9;
+    }
+    
+    input[type="text"],
+    input[type="password"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 8px 12px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-size: 14px;
+      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    
+    input[type="text"]:focus,
+    input[type="password"]:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #58a6ff;
+      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+    }
+    
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .buttons {
+      margin-top: 15px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      padding: 5px 16px;
+      border: 1px solid rgba(240, 246, 252, 0.1);
+      border-radius: 6px;
+      background: #21262d;
+      color: #c9d1d9;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    
+    button:hover {
+      background: #30363d;
+      border-color: #8b949e;
+    }
+    
+    button:active {
+      background: #30363d;
+      transform: scale(0.98);
+    }
+    
+    #domain-controls {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    #domain-controls label {
+      margin: 0;
+      font-weight: normal;
+    }
+    
+    #domain-controls select {
+      width: auto;
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    /* Стили для предпросмотра в стиле GitHub */
+    .preview-container {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 0;
+      margin-top: 20px;
+    }
+    
+    .preview-header {
+      background: #161b22;
+      padding: 12px 16px;
+      border-bottom: 1px solid #30363d;
+      border-radius: 6px 6px 0 0;
+    }
+    
+    .preview-header h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #c9d1d9;
+    }
+    
+    /* GitHub markdown body стили */
+    .markdown-body {
+      box-sizing: border-box;
+      min-width: 200px;
+      max-width: 980px;
+      margin: 0;
+      padding: 45px;
+      background: #0d1117;
+    }
+    
+    @media (max-width: 767px) {
+      .markdown-body {
+        padding: 15px;
+      }
+    }
+    
+    /* Улучшенная навигация по якорям */
+    .markdown-body h1,
+    .markdown-body h2,
+    .markdown-body h3,
+    .markdown-body h4,
+    .markdown-body h5,
+    .markdown-body h6 {
+      scroll-margin-top: 20px;
+    }
+    
+    /* Плавная прокрутка */
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    /* Уведомления */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      background: #238636;
+      color: white;
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      display: none;
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    .notification.error {
+      background: #da3633;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    /* Индикатор режима просмотра */
+    .view-mode-indicator {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 8px 16px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #8b949e;
+      z-index: 999;
+    }
+    
+    .view-mode-indicator.readonly {
+      border-color: #58a6ff;
+      color: #58a6ff;
+    }
+    
+    .section-divider {
+      margin: 20px 0;
+      padding-top: 15px;
+      border-top: 1px solid #30363d;
+    }
+  </style>
+</head>
+<body>
+  <div class="notification" id="notification"></div>
+  <div class="view-mode-indicator" id="viewModeIndicator">Режим просмотра</div>
+  
+  <div class="container">
+    <!-- Сворачиваемая панель редактирования -->
+    <div class="editor-panel">
+      <div class="editor-header" id="editorHeader">
+        <h2>🔒 Панель редактирования</h2>
+        <span class="toggle-icon">▼</span>
+      </div>
+      
+      <div class="editor-content" id="editorContent">
+        <!-- Проверка пароля -->
+        <div id="passwordSection">
+          <label for="password-input">Пароль для редактирования:</label>
+          <input type="password" id="password-input" placeholder="Введите пароль">
+          <div class="buttons">
+            <button id="unlock-btn">Разблокировать редактирование</button>
+          </div>
+          <p style="font-size: 12px; color: #8b949e; margin-top: 10px;">
+            💡 Подсказка: Без пароля доступен только режим просмотра
+          </p>
+        </div>
+        
+        <!-- Панель редактирования (скрыта по умолчанию) -->
+        <div id="editingSection" style="display: none;">
+          <!-- Панель для замены домена в ссылках -->
+          <div id="domain-controls">
+            <label for="domain-select">Заменить домен:</label>
+            <select id="domain-select">
+              <option value="www.heroeswm.ru">www.heroeswm.ru</option>
+              <option value="my.lordswm.com">my.lordswm.com</option>
+              <option value="lordswm.com">lordswm.com</option>
+              <option value="www.lordswm.com">www.lordswm.com</option>
+              <option value="mirror.heroeswm.ru">mirror.heroeswm.ru</option>
+            </select>
+            <button id="replace-domain">Заменить</button>
+          </div>
+          
+          <!-- Редактор исходного markdown -->
+          <label for="markdown-source">Исходный markdown:</label>
+          <textarea id="markdown-source" placeholder="Введите markdown здесь..."></textarea>
+          
+          <div class="buttons">
+            <button id="update-btn">Обновить предпросмотр</button>
+            <button id="download-btn">Скачать исходник</button>
+            <button id="copy-btn">Скопировать исходник</button>
+            <button id="clear-btn">Очистить данные</button>
+          </div>
+          
+          <!-- Интерфейс добавления новой записи -->
+          <div class="section-divider">
+            <h3 style="margin-top: 0; font-size: 14px;">Добавить новую запись</h3>
+            <label for="entry-title">Заголовок (h3):</label>
+            <input type="text" id="entry-title" placeholder="Введите заголовок">
+            <label for="entry-content">Текст записи:</label>
+            <textarea id="entry-content" placeholder="Введите текст записи"></textarea>
+            <div class="buttons">
+              <button id="add-entry-btn">Добавить запись</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Предпросмотр отрендеренного markdown -->
+    <div class="preview-container">
+      <div class="preview-header">
+        <h2>📄 Предпросмотр документа</h2>
+      </div>
+      <article class="markdown-body" id="markdown-preview"></article>
+    </div>
+  </div>
+  
+  <!-- Подключение библиотеки marked.js для рендеринга markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    /********** Конфигурация **********/
+    const CORRECT_PASSWORD = "AnyKeyRoadToTop3";
+    const storageKey = "markdownDocument";
+    let docText = "";
+    let isUnlocked = false;
+    
+    /********** Настройка marked для GitHub-стиля **********/
+    marked.setOptions({
+      gfm: true,
+      breaks: true,
+      headerIds: true,
+      mangle: false
+    });
+    
+    /********** Функции уведомлений **********/
+    function showNotification(message, isError = false) {
+      const notification = document.getElementById("notification");
+      notification.textContent = message;
+      notification.className = "notification" + (isError ? " error" : "");
+      notification.style.display = "block";
+      setTimeout(() => {
+        notification.style.display = "none";
+      }, 3000);
+    }
+    
+    /********** Управление режимами **********/
+    function updateViewMode() {
+      const indicator = document.getElementById("viewModeIndicator");
+      if (isUnlocked) {
+        indicator.textContent = "🔓 Режим редактирования";
+        indicator.classList.remove("readonly");
+      } else {
+        indicator.textContent = "👁️ Режим просмотра";
+        indicator.classList.add("readonly");
+      }
+    }
+    
+    /********** Проверка пароля **********/
+    function checkPassword() {
+      const passwordInput = document.getElementById("password-input");
+      const enteredPassword = passwordInput.value;
+      
+      if (enteredPassword === CORRECT_PASSWORD) {
+        isUnlocked = true;
+        document.getElementById("passwordSection").style.display = "none";
+        document.getElementById("editingSection").style.display = "block";
+        showNotification("✅ Доступ разрешен! Редактирование разблокировано.");
+        updateViewMode();
+        passwordInput.value = "";
+      } else {
+        showNotification("❌ Неверный пароль!", true);
+        passwordInput.value = "";
+      }
+    }
+    
+    /********** Управление панелью редактирования **********/
+    function toggleEditorPanel() {
+      const content = document.getElementById("editorContent");
+      const icon = document.querySelector(".toggle-icon");
+      
+      if (content.classList.contains("expanded")) {
+        content.classList.remove("expanded");
+        icon.classList.add("collapsed");
+      } else {
+        content.classList.add("expanded");
+        icon.classList.remove("collapsed");
+      }
+    }
+    
+    /********** Генерация slug для якорей **********/
+    function generateSlug(text) {
+      return text
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "-")
+        .replace(/[^\p{L}\p{N}-]+/gu, "");
+    }
+    
+    /********** Инициализация и localStorage **********/
+    function loadMarkdown() {
+      const stored = localStorage.getItem(storageKey);
+      docText = stored ? stored : "";
+      document.getElementById("markdown-source").value = docText;
+      updatePreview();
+    }
+    
+    function saveMarkdown() {
+      localStorage.setItem(storageKey, docText);
+    }
+    
+    /********** Функция обновления предпросмотра **********/
+    function updatePreview() {
+      if (isUnlocked) {
+        docText = document.getElementById("markdown-source").value;
+        saveMarkdown();
+      }
+      
+      // Настраиваем marked для создания правильных ID для заголовков
+      const renderer = new marked.Renderer();
+      const originalHeading = renderer.heading;
+      
+      renderer.heading = function(text, level, raw) {
+        const slug = generateSlug(raw);
+        return `<h${level} id="${slug}">${text}</h${level}>\n`;
+      };
+      
+      marked.setOptions({ renderer: renderer });
+      
+      document.getElementById("markdown-preview").innerHTML = marked.parse(docText);
+    }
+    
+    /********** Добавление новой записи **********/
+    function addEntry() {
+      if (!isUnlocked) {
+        showNotification("❌ Требуется пароль для редактирования!", true);
+        return;
+      }
+      
+      const titleInput = document.getElementById("entry-title");
+      const contentInput = document.getElementById("entry-content");
+      const title = titleInput.value.trim();
+      let content = contentInput.value.trim();
+      
+      if (!title) {
+        showNotification("❌ Введите заголовок!", true);
+        return;
+      }
+      
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+      const dateSlug = generateSlug(dateStr);
+      const slug = generateSlug(title);
+      
+      let entryMarkdown = `---\n### ${title}\n\n[Наверх](#${dateSlug})\n\n${content}\n\n`;
+      
+      const tocHeader = `## ${dateStr}`;
+      const tocLinkPrefix = "- [";
+      
+      if (docText.includes(tocHeader)) {
+        const lines = docText.split("\n");
+        let newDocLines = [];
+        let inToc = false;
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].trim() === tocHeader) {
+            inToc = true;
+            newDocLines.push(lines[i]);
+            newDocLines.push(`${tocLinkPrefix}${title}](#${slug})`);
+            continue;
+          }
+          if (inToc && lines[i].startsWith("## ")) {
+            inToc = false;
+          }
+          newDocLines.push(lines[i]);
+        }
+        docText = newDocLines.join("\n");
+        let docLines = docText.trim().split("\n");
+        if (docLines[docLines.length - 1].trim() === "---") {
+          entryMarkdown = entryMarkdown.replace(/^---\n/, "");
+        }
+        docText += "\n" + entryMarkdown;
+      } else {
+        const newTOC = `${tocHeader}\n${tocLinkPrefix}${title}](#${slug})\n\n---\n\n`;
+        docText = newTOC + docText;
+        let docLines = docText.trim().split("\n");
+        if (docLines[docLines.length - 1].trim() === "---") {
+          entryMarkdown = entryMarkdown.replace(/^---\n/, "");
+        }
+        docText += "\n" + entryMarkdown;
+      }
+      
+      // Пересортировка оглавлений по датам
+      let lines = docText.split("\n");
+      let tocSections = {};
+      let contentLines = [];
+      let currentToc = null;
+      
+      for (let line of lines) {
+        if (line.startsWith("## ")) {
+          currentToc = line;
+          tocSections[currentToc] = [];
+        } else if (currentToc && line.startsWith("- [")) {
+          tocSections[currentToc].push(line);
+        } else {
+          contentLines.push(line);
+        }
+      }
+      
+      let tocKeys = Object.keys(tocSections);
+      tocKeys.sort((a, b) => {
+        const dateA = a.substring(3).trim();
+        const dateB = b.substring(3).trim();
+        function parseDate(dateStr) {
+          const parts = dateStr.split(" ");
+          let day = parseInt(parts[0]);
+          let monthName = parts[1];
+          const months = {
+            "января": 0, "февраля": 1, "марта": 2, "апреля": 3,
+            "мая": 4, "июня": 5, "июля": 6, "августа": 7,
+            "сентября": 8, "октября": 9, "ноября": 10, "декабря": 11
+          };
+          let month = months[monthName];
+          let year = new Date().getFullYear();
+          if (new Date().getMonth() === 11 && month === 0) {
+            year++;
+          }
+          return new Date(year, month, day);
+        }
+        return parseDate(dateB) - parseDate(dateA);
+      });
+      
+      let newTOCBlock = "";
+      for (let key of tocKeys) {
+        newTOCBlock += key + "\n";
+        tocSections[key].forEach(bullet => newTOCBlock += bullet + "\n");
+        newTOCBlock += "\n";
+      }
+      
+      docText = newTOCBlock + "\n" + contentLines.join("\n");
+      
+      document.getElementById("markdown-source").value = docText;
+      updatePreview();
+      titleInput.value = "";
+      contentInput.value = "";
+      showNotification("✅ Запись добавлена!");
+    }
+    
+    /********** Скачивание исходника **********/
+    function downloadSource() {
+      const blob = new Blob([docText], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "document.md";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showNotification("📥 Файл загружен!");
+    }
+    
+    /********** Копирование исходника в буфер обмена **********/
+    function copySource() {
+      navigator.clipboard.writeText(docText)
+        .then(() => { showNotification("📋 Скопировано в буфер обмена!"); })
+        .catch(err => { showNotification("❌ Ошибка копирования: " + err, true); });
+    }
+    
+    /********** Очистка localStorage **********/
+    function clearData() {
+      if (!isUnlocked) {
+        showNotification("❌ Требуется пароль для очистки данных!", true);
+        return;
+      }
+      
+      if (confirm("Вы уверены, что хотите очистить все данные?")) {
+        localStorage.removeItem(storageKey);
+        docText = "";
+        document.getElementById("markdown-source").value = "";
+        updatePreview();
+        showNotification("🗑️ Данные очищены!");
+      }
+    }
+    
+    /********** Замена домена в ссылках **********/
+    function replaceDomains() {
+      if (!isUnlocked) {
+        showNotification("❌ Требуется пароль для редактирования!", true);
+        return;
+      }
+      
+      const selectedDomain = document.getElementById("domain-select").value;
+      const domains = ["www.heroeswm.ru", "my.lordswm.com", "lordswm.com", "www.lordswm.com", "mirror.heroeswm.ru"];
+      const regex = new RegExp("(" + domains.join("|").replace(/\./g, "\\.") + ")", "gi");
+      docText = docText.replace(regex, selectedDomain);
+      document.getElementById("markdown-source").value = docText;
+      updatePreview();
+      showNotification("🔄 Домены заменены на " + selectedDomain);
+    }
+    
+    /********** Обработчики событий **********/
+    document.getElementById("unlock-btn").addEventListener("click", checkPassword);
+    document.getElementById("password-input").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") checkPassword();
+    });
+    document.getElementById("editorHeader").addEventListener("click", toggleEditorPanel);
+    document.getElementById("add-entry-btn").addEventListener("click", addEntry);
+    document.getElementById("download-btn").addEventListener("click", downloadSource);
+    document.getElementById("copy-btn").addEventListener("click", copySource);
+    document.getElementById("clear-btn").addEventListener("click", clearData);
+    document.getElementById("update-btn").addEventListener("click", updatePreview);
+    document.getElementById("replace-domain").addEventListener("click", replaceDomains);
+    
+    document.getElementById("markdown-source").addEventListener("input", () => {
+      if (isUnlocked) {
+        docText = document.getElementById("markdown-source").value;
+        saveMarkdown();
+        updatePreview();
+      }
+    });
+    
+    /********** Инициализация при загрузке **********/
+    window.onload = function() {
+      loadMarkdown();
+      updateViewMode();
+      // Панель редактирования свернута по умолчанию
+      document.querySelector(".toggle-icon").classList.add("collapsed");
+    };
+  </script>
+</body>
+</html>
