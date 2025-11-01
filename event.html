@@ -356,6 +356,52 @@
       padding-top: 15px;
       border-top: 1px solid var(--border-color);
     }
+    /* Стили для чекбокса */
+    input[type="checkbox"] {
+      width: auto;
+      margin-right: 8px;
+      cursor: pointer;
+    }
+
+    .format-controls {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .format-controls h3 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .format-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .format-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .format-row label {
+      margin: 0;
+      font-weight: normal;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .format-row select {
+      flex: 1;
+      min-width: 200px;
+    }
+
   </style>
 </head>
 <body>
@@ -427,6 +473,28 @@
       </div>
     </div>
     
+    <!-- Панель форматирования -->
+    <div class="format-controls">
+      <h3>⚙️ Форматирование</h3>
+      
+      <div class="format-row">
+        <label for="format-domain-select">Домен:</label>
+        <select id="format-domain-select">
+          <option value="www.heroeswm.ru">www.heroeswm.ru</option>
+          <option value="my.lordswm.com">my.lordswm.com</option>
+          <option value="mirror.heroeswm.ru">mirror.heroeswm.ru</option>
+          <option value="www.lordswm.com">www.lordswm.com</option>
+        </select>
+      </div>
+      
+      <div class="format-row">
+        <label>
+          <input type="checkbox" id="battle-start-checkbox">
+          Начало боя (добавить lt к ссылкам)
+        </label>
+      </div>
+    </div>
+    
     <!-- Предпросмотр отрендеренного markdown -->
     <div class="preview-container">
       <div class="preview-header">
@@ -451,6 +519,11 @@
     
     const themeStorageKey = "themePreference";
     let currentTheme = "light"; // По умолчанию светлая тема
+    // Настройки форматирования
+    const formatDomainKey = "formatDomain";
+    const formatBattleStartKey = "formatBattleStart";
+    let selectedDomain = "www.heroeswm.ru"; // По умолчанию
+    let battleStartEnabled = false; // По умолчанию выключено
 
     /********** Управление темой **********/
     function setTheme(theme) {
@@ -487,6 +560,79 @@
       setTheme(savedTheme || "light");
     }
     
+    /********** Форматирование ссылок **********/
+    function formatLinks(text) {
+      const domains = ["www.heroeswm.ru", "my.lordswm.com", "mirror.heroeswm.ru", "www.lordswm.com"];
+      
+      // Создаём regex для поиска всех ссылок с этими доменами
+      const domainPattern = domains.map(d => d.replace(/\./g, '\\.')).join('|');
+      const urlRegex = new RegExp(`https?://(${domainPattern})(/[^\\s)\\]]*)?`, 'gi');
+      
+      return text.replace(urlRegex, (match) => {
+        try {
+          const url = new URL(match);
+          
+          // Заменяем домен на выбранный
+          url.hostname = selectedDomain;
+          
+          // Обрабатываем параметр lt для начала боя
+          if (battleStartEnabled) {
+            // Проверяем, есть ли уже параметр lt
+            const hasLt = url.searchParams.has('lt');
+            
+            if (hasLt) {
+              // Удаляем существующий lt
+              url.searchParams.delete('lt');
+            }
+            
+            // Добавляем lt без значения в конец
+            // Используем хак: добавляем через строку, чтобы избежать =
+            let formattedUrl = url.toString();
+            const hasParams = formattedUrl.includes('?');
+            formattedUrl += (hasParams ? '&' : '?') + 'lt';
+            
+            return formattedUrl;
+          } else {
+            // Убираем параметр lt если он есть
+            url.searchParams.delete('lt');
+            return url.toString();
+          }
+        } catch (e) {
+          // Если URL невалидный, возвращаем как есть
+          console.error('Invalid URL:', match, e);
+          return match;
+        }
+      });
+    }
+
+    function loadFormatSettings() {
+      // Загружаем домен
+      const savedDomain = localStorage.getItem(formatDomainKey);
+      selectedDomain = savedDomain || "www.heroeswm.ru";
+      document.getElementById("format-domain-select").value = selectedDomain;
+      
+      // Загружаем настройку начала боя
+      const savedBattleStart = localStorage.getItem(formatBattleStartKey);
+      battleStartEnabled = savedBattleStart === "true";
+      document.getElementById("battle-start-checkbox").checked = battleStartEnabled;
+    }
+
+    function saveFormatSettings() {
+      localStorage.setItem(formatDomainKey, selectedDomain);
+      localStorage.setItem(formatBattleStartKey, battleStartEnabled.toString());
+    }
+
+    function onFormatChange() {
+      // Обновляем настройки
+      selectedDomain = document.getElementById("format-domain-select").value;
+      battleStartEnabled = document.getElementById("battle-start-checkbox").checked;
+      
+      // Сохраняем
+      saveFormatSettings();
+      
+      // Перерисовываем предпросмотр
+      updatePreview();
+    }
     
     /********** Хеширование SHA-256 **********/
     async function hashSHA256(text) {
@@ -628,6 +774,9 @@
         saveMarkdown();
       }
       
+      // Применяем форматирование к тексту перед рендерингом
+      const formattedText = formatLinks(docText);
+      
       // Настраиваем marked для создания правильных ID для заголовков
       const renderer = {
         heading({ tokens, depth }) {
@@ -647,7 +796,7 @@
         mangle: false
       });
       
-      document.getElementById("markdown-preview").innerHTML = marked.parse(docText);
+      document.getElementById("markdown-preview").innerHTML = marked.parse(formattedText);
     }
     
     
@@ -959,6 +1108,8 @@
     /********** Обработчики событий **********/
     document.getElementById("themeToggle").addEventListener("click", toggleTheme);
     document.getElementById("unlock-btn").addEventListener("click", checkPassword);
+    document.getElementById("format-domain-select").addEventListener("change", onFormatChange);
+    document.getElementById("battle-start-checkbox").addEventListener("change", onFormatChange);
     document.getElementById("password-input").addEventListener("keypress", (e) => {
       if (e.key === "Enter") checkPassword();
     });
@@ -981,6 +1132,7 @@
     /********** Инициализация при загрузке **********/
     window.onload = function() {
       loadTheme()
+      loadFormatSettings() // Загружаем настройки форматирования
       syncWithDatabase() // Синхронизируемся с БД вместо loadMarkdown()
       updateViewMode()
       document.querySelector(".toggle-icon").classList.add("collapsed")
