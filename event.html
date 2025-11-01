@@ -362,15 +362,7 @@
       margin-right: 8px;
       cursor: pointer;
     }
-
-    .format-controls {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      padding: 16px;
-      margin-bottom: 20px;
-    }
-
+    
     .format-controls h3 {
       margin: 0 0 12px 0;
       font-size: 16px;
@@ -474,24 +466,27 @@
     </div>
     
     <!-- Панель форматирования -->
-    <div class="format-controls">
-      <h3>⚙️ Форматирование</h3>
-      
-      <div class="format-row">
-        <label for="format-domain-select">Домен:</label>
-        <select id="format-domain-select">
-          <option value="www.heroeswm.ru">www.heroeswm.ru</option>
-          <option value="my.lordswm.com">my.lordswm.com</option>
-          <option value="mirror.heroeswm.ru">mirror.heroeswm.ru</option>
-          <option value="www.lordswm.com">www.lordswm.com</option>
-        </select>
+    <div class="format-panel">
+      <div class="format-header" id="formatHeader">
+        <h3>⚙️ Форматирование</h3>
+        <span class="toggle-icon collapsed">▼</span>
       </div>
       
-      <div class="format-row">
-        <label>
-          <input type="checkbox" id="battle-start-checkbox">
-          Начало боя (добавить lt к ссылкам)
-        </label>
+      <div class="format-content" id="formatContent">
+        <div class="format-row">
+          <label for="format-domain-select">Домен:</label>
+          <select id="format-domain-select">
+            <option value="www.heroeswm.ru">www.heroeswm.ru</option>
+            <option value="my.lordswm.com">my.lordswm.com</option>
+            <option value="mirror.heroeswm.ru">mirror.heroeswm.ru</option>
+            <option value="www.lordswm.com">www.lordswm.com</option>
+          </select>
+          
+          <label class="checkbox-label">
+            <input type="checkbox" id="battle-start-checkbox">
+            Начало боя
+          </label>
+        </div>
       </div>
     </div>
     
@@ -736,6 +731,20 @@
     function toggleEditorPanel() {
       const content = document.getElementById("editorContent");
       const icon = document.querySelector(".toggle-icon");
+      
+      if (content.classList.contains("expanded")) {
+        content.classList.remove("expanded");
+        icon.classList.add("collapsed");
+      } else {
+        content.classList.add("expanded");
+        icon.classList.remove("collapsed");
+      }
+    }
+    
+    /********** Управление панелью форматирования **********/
+    function toggleFormatPanel() {
+      const content = document.getElementById("formatContent");
+      const icon = document.querySelector("#formatHeader .toggle-icon");
       
       if (content.classList.contains("expanded")) {
         content.classList.remove("expanded");
@@ -1114,6 +1123,7 @@
       if (e.key === "Enter") checkPassword();
     });
     document.getElementById("editorHeader").addEventListener("click", toggleEditorPanel);
+    document.getElementById("formatHeader").addEventListener("click", toggleFormatPanel);
     document.getElementById("add-entry-btn").addEventListener("click", addEntry);
     document.getElementById("download-btn").addEventListener("click", downloadSource);
     document.getElementById("copy-btn").addEventListener("click", copySource);
