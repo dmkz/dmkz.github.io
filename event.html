@@ -1041,7 +1041,8 @@
         
         // Добавляем ссылки в оглавление
         for (const entry of dateGroups[dateSection]) {
-          markdown += `- ${entry.title}\n`
+          const slug = generateSlug(entry.title)
+          markdown += `- [${entry.title}](#${slug})\n`
         }
         markdown += `\n`
       }
@@ -1051,11 +1052,13 @@
       // Затем добавляем всё содержимое записей
       for (const dateSection of sortedDates) {
         for (const entry of dateGroups[dateSection]) {
-          markdown += `### ${entry.title}\n\n`
+          const slug = generateSlug(entry.title)
+          markdown += `### ${entry.title} {#${slug}}\n\n`
           markdown += `[Наверх](#${generateSlug(dateSection)})\n\n`
           markdown += `${entry.content}\n\n`
         }
       }
+
 
       
       docText = markdown
