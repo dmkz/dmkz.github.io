@@ -1035,22 +1035,28 @@
         return parseDate(b) - parseDate(a)
       })
       
+      // Сначала собираем все оглавления
       for (const dateSection of sortedDates) {
         markdown += `## ${dateSection}\n`
         
         // Добавляем ссылки в оглавление
         for (const entry of dateGroups[dateSection]) {
-          markdown += `- [${entry.title}](#${entry.slug})\n`
+          markdown += `- ${entry.title}\n`
         }
-        markdown += `\n---\n\n`
-        
-        // Добавляем содержимое записей
+        markdown += `\n`
+      }
+
+      markdown += `---\n\n`
+
+      // Затем добавляем всё содержимое записей
+      for (const dateSection of sortedDates) {
         for (const entry of dateGroups[dateSection]) {
           markdown += `### ${entry.title}\n\n`
           markdown += `[Наверх](#${generateSlug(dateSection)})\n\n`
           markdown += `${entry.content}\n\n`
         }
       }
+
       
       docText = markdown
       document.getElementById("markdown-source").value = docText
