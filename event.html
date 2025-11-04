@@ -1046,18 +1046,18 @@
         }
         markdown += `\n`
       }
-
+      
       markdown += `---\n\n`
-
+      
       // Затем добавляем всё содержимое записей
       for (const dateSection of sortedDates) {
         for (const entry of dateGroups[dateSection]) {
-          const slug = generateSlug(entry.title)
-          markdown += `### ${entry.title} {#${slug}}\n\n`
+          markdown += `### ${entry.title}\n\n`
           markdown += `[Наверх](#${generateSlug(dateSection)})\n\n`
           markdown += `${entry.content}\n\n`
         }
       }
+
 
 
       
