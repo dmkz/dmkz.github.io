@@ -935,7 +935,7 @@
                       'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
                       'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ links: batch })
+                    body: JSON.stringify({ links: chunk.map(b => b.link) })
                   }
                 );
                 if (!res.ok) {
