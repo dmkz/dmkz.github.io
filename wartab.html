@@ -644,7 +644,13 @@
       console.log('🔄 Начало загрузки данных...');
       const startTime = Date.now();
       
-      const firstResponse = await fetch(`${GET_BATTLES_URL}?page=0&pageSize=1000`);
+      const firstResponse = await fetch(`${GET_BATTLES_URL}?page=0&pageSize=1000`, {
+          headers: {
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          }
+      });
+
       if (!firstResponse.ok) {
         throw new Error(`HTTP error! status: ${firstResponse.status}`);
       }
@@ -666,8 +672,12 @@
       const pagePromises = [];
       for (let page = 1; page < firstData.totalPages; page++) {
         pagePromises.push(
-          fetch(`${GET_BATTLES_URL}?page=${page}&pageSize=1000`)
-            .then(res => {
+          fetch(`${GET_BATTLES_URL}?page=${page}&pageSize=1000`, {
+            headers: {
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json'
+            }
+          }).then(res => {
               if (!res.ok) throw new Error(`HTTP error on page ${page}! status: ${res.status}`);
               return res.json();
             })
@@ -821,7 +831,10 @@
             };
             const updateRes = await fetch(`${UPDATE_BATTLES_URL}`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json'
+              },
               body: JSON.stringify(payload)
             });
             if (!updateRes.ok) {
