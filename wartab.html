@@ -998,7 +998,7 @@
                   
                   if (r.status === 'success' && r.result) {
                     // Извлекаем текстовое представление
-                    const resultText = r.result.output || JSON.stringify(r.result);
+                    const resultText = r.result.output || r.result;
                     console.log(`  ✓ Устанавливаем result (длина ${resultText.length} символов)`);
                     console.log(`  ✓ Первые 100 символов:`, resultText.substring(0, 100));
                     
