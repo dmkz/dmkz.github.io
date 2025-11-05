@@ -644,7 +644,7 @@
       console.log('🔄 Начало загрузки данных...');
       const startTime = Date.now();
       
-      const firstResponse = await fetch('${GET_BATTLES_URL}?page=0&pageSize=1000');
+      const firstResponse = await fetch(`${GET_BATTLES_URL}?page=0&pageSize=1000`);
       if (!firstResponse.ok) {
         throw new Error(`HTTP error! status: ${firstResponse.status}`);
       }
@@ -819,7 +819,7 @@
               markers: markersInput.value,
               eventId: selectedEventId 
             };
-            const updateRes = await fetch('${UPDATE_BATTLES_URL}', {
+            const updateRes = await fetch(`${UPDATE_BATTLES_URL}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
