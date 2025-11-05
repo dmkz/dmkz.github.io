@@ -638,6 +638,7 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkemlicnR1YWpvcGNzbnVqemFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0Nzk1MjMsImV4cCI6MjA2MDA1NTUyM30.pE_wA9epoX0YLkAmeH0A8AYX-HZgmfr2d25CNrF3IiI'
   const UPDATE_BATTLES_URL = `${SUPABASE_URL}/functions/v1/updateBattles`
   const GET_BATTLES_URL = `${SUPABASE_URL}/functions/v1/getBattles`
+  const ANALYZE_BATTLES_URL = `${SUPABASE_URL}/functions/v1/analyzeBattles`
   // ============ ФУНКЦИЯ ЗАГРУЗКИ ДАННЫХ ============
   async function loadAllBattlesParallel() {
     try {
@@ -927,11 +928,14 @@
 
               try {
                 const res = await fetch(
-                  '/.netlify/functions/analyzeBattles',
+                  `${ANALYZE_BATTLES_URL}`,
                   {
                     method: 'POST',
-                    headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ links: chunk.map(b=>b.link) })
+                    headers: {
+                      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ links: batch })
                   }
                 );
                 if (!res.ok) {
