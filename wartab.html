@@ -954,8 +954,8 @@
                 data.results.forEach(r => {
                   const b = battles.find(x => x.link === r.link);
                   if (b && r.status === 'success' && r.result) {
-                    b.result = r.result;
-                    processed++;
+                    // Извлекаем текстовое представление
+                    b.result = r.result.output || JSON.stringify(r.result);
                   }
                 });
                 success = true;
