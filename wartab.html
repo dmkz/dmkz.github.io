@@ -902,11 +902,21 @@
         }
       }
 
-      /* Функция анализа боёв (оставляем существующую реализацию) */
-      async function analyzeBattles(battles) {
+      /* Функция анализа боёв с отладочным выводом */
+        async function analyzeBattles(battles) {
+          console.log('🔵 analyzeBattles: Начало работы');
+          console.log('🔵 Всего боёв в battles:', battles.length);
+          
           const toAnalyze = battles.filter(b => !b.result);
-          const total     = toAnalyze.length;
-          const BATCH_SIZE   = 200;
+          console.log('🔵 Боёв без результата (toAnalyze):', toAnalyze.length);
+          console.log('🔵 Первые 3 боя для анализа:', toAnalyze.slice(0, 3).map(b => ({
+            link: b.link,
+            warid: b.warid,
+            hasResult: !!b.result
+          })));
+          
+          const total = toAnalyze.length;
+          const BATCH_SIZE = 200;
           const MAX_ATTEMPTS = 5;
 
           let permanentlyFailed = [];
@@ -915,11 +925,11 @@
 
           for (let i = 0; i < total; i += BATCH_SIZE) {
             const chunk = toAnalyze.slice(i, i + BATCH_SIZE);
-            let attempt = 1,
-                success = false;
+            console.log(`🟢 Обработка чанка ${i / BATCH_SIZE + 1}: ${chunk.length} боёв`);
+            
+            let attempt = 1, success = false;
 
             while (attempt <= MAX_ATTEMPTS && !success) {
-              // обновляем статус перед каждой попыткой
               const elapsed = ((performance.now() - t0) / 1000).toFixed(3);
               statusText.textContent = 
                 `Статус: ${processed}/${total} боёв. ` +
@@ -927,62 +937,118 @@
                 `Время: ${elapsed} сек`;
 
               try {
-                const res = await fetch(
-                  `${ANALYZE_BATTLES_URL}`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                      'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ links: chunk.map(b => b.link) })
-                  }
-                );
+                console.log(`🟡 Попытка ${attempt}: отправка ${chunk.length} ссылок`);
+                
+                const res = await fetch(ANALYZE_BATTLES_URL, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ links: chunk.map(b => b.link) })
+                });
+                
+                console.log(`🟡 Ответ получен: status=${res.status}, ok=${res.ok}`);
+                
                 if (!res.ok) {
+                  console.warn(`🔴 Ошибка HTTP: ${res.status} ${res.statusText}`);
+                  const errorText = await res.text();
+                  console.warn('🔴 Тело ошибки:', errorText.substring(0, 200));
                   attempt++;
-                  await new Promise(r=>setTimeout(r,1000));
+                  await new Promise(r => setTimeout(r, 1000));
                   continue;
                 }
+                
                 const data = await res.json();
+                console.log('🟢 Данные распарсены:', {
+                  hasResults: !!data.results,
+                  isArray: Array.isArray(data.results),
+                  length: data.results?.length
+                });
+                
                 if (!Array.isArray(data.results)) {
+                  console.warn('🔴 data.results не массив:', typeof data.results);
                   attempt++;
-                  await new Promise(r=>setTimeout(r,1000));
+                  await new Promise(r => setTimeout(r, 1000));
                   continue;
                 }
 
-                // Пометить результаты как готовые
-                data.results.forEach(r => {
+                console.log(`🟢 Получено ${data.results.length} результатов`);
+                console.log('🟢 Первый результат:', data.results[0]);
+                
+                // Обработка результатов
+                let updatedCount = 0;
+                data.results.forEach((r, idx) => {
+                  console.log(`  Результат ${idx}:`, {
+                    link: r.link,
+                    status: r.status,
+                    hasResult: !!r.result,
+                    resultType: typeof r.result,
+                    resultKeys: r.result ? Object.keys(r.result) : null
+                  });
+                  
                   const b = battles.find(x => x.link === r.link);
-                  if (b && r.status === 'success' && r.result) {
+                  
+                  if (!b) {
+                    console.warn(`  🔴 Бой не найден в battles для link=${r.link}`);
+                    return;
+                  }
+                  
+                  console.log(`  ✓ Бой найден: warid=${b.warid}`);
+                  
+                  if (r.status === 'success' && r.result) {
                     // Извлекаем текстовое представление
-                    b.result = r.result.output || JSON.stringify(r.result);
+                    const resultText = r.result.output || JSON.stringify(r.result);
+                    console.log(`  ✓ Устанавливаем result (длина ${resultText.length} символов)`);
+                    console.log(`  ✓ Первые 100 символов:`, resultText.substring(0, 100));
+                    
+                    b.result = resultText;
+                    updatedCount++;
+                  } else {
+                    console.warn(`  🔴 Статус не success или нет result: status=${r.status}`);
                   }
                 });
+                
+                console.log(`🟢 Обновлено ${updatedCount} боёв в battles`);
+                processed += chunk.length;
                 success = true;
+                
               } catch (err) {
+                console.error(`🔴 Исключение на попытке ${attempt}:`, err);
+                console.error('🔴 Stack:', err.stack);
                 attempt++;
-                await new Promise(r=>setTimeout(r,1000));
+                await new Promise(r => setTimeout(r, 1000));
               }
             }
 
             if (!success) {
+              console.error(`🔴 Чанк провалился после ${MAX_ATTEMPTS} попыток`);
               permanentlyFailed.push(...chunk);
             }
           }
 
-          // Финальное обновление статуса
           const totalElapsed = ((performance.now() - t0) / 1000).toFixed(3);
           statusText.textContent = 
             `Анализ завершён: ${processed}/${total} боёв за ${totalElapsed} сек`;
 
+          console.log('🔵 Анализ завершён:', {
+            processed,
+            total,
+            elapsed: totalElapsed,
+            failed: permanentlyFailed.length
+          });
+
           if (permanentlyFailed.length) {
+            console.warn('🔴 Провалившиеся бои:', permanentlyFailed.map(b => b.link));
             showAnalysisErrorModal(permanentlyFailed);
             battles = battles.filter(b => b.result !== null);
           }
 
+          console.log('🔵 Финальный battles.length:', battles.length);
+          console.log('🔵 Боёв с результатом:', battles.filter(b => b.result).length);
+
           return battles;
         }
-
 
     function showAnalysisErrorModal(failedBattles) {
   let modalOverlay = document.createElement('div');
